@@ -1,0 +1,17 @@
+{
+  "name": "content-skills",
+  "owner": {
+    "name": "chyyynh"
+  },
+  "metadata": {
+    "description": "商業/創業領域的內容產出 skills for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "content-skills",
+      "source": "./plugins/content-skills",
+      "description": "選題推薦 + 多管道內容撰寫，基於 newsence 資料來源",
+      "version": "0.1.0"
+    }
+  ]
+}

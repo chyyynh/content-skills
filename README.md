@@ -5,14 +5,18 @@
 ## 安裝
 
 ```bash
-claude plugin install --git-url https://github.com/chyyynh/content-skills
+# 1. 加入 marketplace
+/plugin marketplace add chyyynh/content-skills
+
+# 2. 安裝 plugin
+/plugin install content-skills@content-skills
 ```
 
-或本地測試：
+本地測試：
 
 ```bash
 git clone https://github.com/chyyynh/content-skills.git
-claude --plugin-dir ./content-skills
+claude --plugin-dir ./content-skills/plugins/content-skills
 ```
 
 ## Prerequisites
@@ -42,9 +46,3 @@ claude mcp add newsence -- npx newsence mcp
 - Twitter Thread
 
 觸發方式：說「寫日報」「寫腳本」「寫長文」，或在 content-selector 選完題後說「開始吧」。
-
-## 自訂配置
-
-安裝後可選配置：
-
-- `skills/content-writer/references/custom-style.md` — 定義你的品牌風格（建立後自動生效）
