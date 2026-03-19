@@ -1,6 +1,6 @@
 # content-skills
 
-商業/創業領域的內容產出 plugin for Claude Code，powered by [newsence](https://www.npmjs.com/package/newsence)。
+內容產出工具鏈：從選題到撰寫，powered by [newsence](https://www.npmjs.com/package/newsence)。
 
 ## 安裝
 

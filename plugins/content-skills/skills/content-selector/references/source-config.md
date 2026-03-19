@@ -15,9 +15,15 @@
 | `list_collections` | 列出收藏夾 | 是 |
 | `add_to_collection` | 加入收藏 | 是 |
 
-註冊方式：
+**Claude Code（本地）**：
 ```bash
 claude mcp add newsence -- npx newsence mcp
+```
+
+**Cowork / Claude Desktop（遠端）**：
+Settings > Connectors > Add custom connector，URL 填：
+```
+https://www.newsence.app/api/mcp
 ```
 
 ## CLI 模式（備用）
