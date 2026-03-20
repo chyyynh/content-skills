@@ -3,7 +3,7 @@ name: content-writer
 description: >
   根據 newsence 文章素材，撰寫不同管道的內容草稿：微信公眾號日報、小紅書/抖音短影片腳本、公眾號長文、Twitter Thread。
   當用戶說「寫日報」「寫腳本」「寫長文」「幫我寫一篇」「開始寫」時觸發。
-  用戶在 content-selector 選完題後說「開始吧」「就這幾個」也應觸發。
+  用戶在 content-recommender 選完題後說「開始吧」「就這幾個」也應觸發。
   任何涉及內容撰寫、草稿生成、文案產出的請求都應使用此 skill，即使用戶沒有明確指定格式或平台。
   如果用戶給了一篇文章或話題並暗示要產出內容（「這個可以寫」「幫我發一下」），也應觸發。
 ---
@@ -14,18 +14,18 @@ description: >
 
 ## 前置條件
 
-需要 newsence 來讀取文章全文。確認方式同 content-selector — 檢查 MCP tools 或 CLI 是否可用。如果不可用，引導用戶參考 content-selector 的 `references/source-config.md` 設定。
+需要 newsence 來讀取文章全文。確認方式同 content-recommender — 檢查 MCP tools 或 CLI 是否可用。如果不可用，引導用戶參考 content-recommender 的 `references/source-config.md` 設定。
 
 ## 流程
 
 ### 1. 確認任務
 
 搞清楚三件事：
-- **素材**：用戶指定的文章（可能帶 newsence article id），或剛從 content-selector 選出來的
+- **素材**：用戶指定的文章（可能帶 newsence article id），或剛從 content-recommender 選出來的
 - **格式**：日報 / 短影片腳本 / 長文（公眾號或 Twitter Thread）
 - **平台**：微信公眾號 / 小紅書 / 抖音 / Twitter/X
 
-如果從 content-selector 銜接過來，這些資訊應該都已經有了，直接開始。
+如果從 content-recommender 銜接過來，這些資訊應該都已經有了，直接開始。
 
 ### 2. 讀取素材全文
 

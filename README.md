@@ -5,10 +5,10 @@
 ## 安裝
 
 ```bash
-# 1. 加入 marketplace
+# 加入 marketplace
 /plugin marketplace add chyyynh/content-skills
 
-# 2. 安裝 plugin
+# 安裝 plugin
 /plugin install content-skills@content-skills
 ```
 
@@ -21,28 +21,48 @@ claude --plugin-dir ./content-skills/plugins/content-skills
 
 ## Prerequisites
 
-需要先設定 newsence 作為資料來源：
+需要設定 [newsence](https://www.npmjs.com/package/newsence) 作為資料來源：
 
 ```bash
-# 註冊為 Claude Code MCP server（推薦）
 claude mcp add newsence -- npx newsence mcp
 ```
 
 ## Skills
 
-### content-selector
+### content-recommender — 內容推薦
 
-用 newsence 抓取最新文章，分析熱度，推薦適合日報、短影片、長文的選題。
+分析近期文章，推薦值得做的內容主題。每個推薦包含：
 
-觸發方式：提到「選題」「熱點」「今天寫什麼」「有什麼新聞」等內容規劃相關的話題。
+- 建議角度和切入點
+- 參考資料（來源文章及其角色：核心素材、對立觀點、數據來源等）
+- 適合的管道（日報 / 短影片 / 長文）和時效建議
 
-### content-writer
+也支援追熱點判斷 — 問「XXX 要不要跟」就會分析報導密度和趨勢階段，給出跟/不跟建議。
 
-拿 newsence 的文章素材，根據不同管道撰寫內容草稿：
+### content-writer — 內容撰寫
 
-- 微信公眾號日報
-- 小紅書/抖音短影片腳本
-- 公眾號長文
-- Twitter Thread
+根據推薦的主題和參考資料，產出不同管道的內容草稿：
 
-觸發方式：說「寫日報」「寫腳本」「寫長文」，或在 content-selector 選完題後說「開始吧」。
+- 日報（微信公眾號）
+- 短影片腳本（小紅書 / 抖音）
+- 長文（公眾號 / Twitter Thread）
+
+內建風格系統（語氣 × 深度 × 人稱），每個管道有預設組合，也可以自訂。
+
+## 工作流程
+
+```
+「今天寫什麼」 → content-recommender 分析 + 推薦
+                         ↓
+              選定主題（帶參考資料）
+                         ↓
+「開始寫」   → content-writer 產出草稿
+```
+
+兩個 skill 可以獨立使用，也可以串接。recommender 選完題後說「開始吧」會自動銜接到 writer。
+
+## 自訂配置
+
+安裝後可選：
+
+- `content-writer/references/custom-style.md` — 定義品牌風格（建立後自動生效）
