@@ -8,12 +8,26 @@
   },
   "plugins": [
     {
-      "name": "content-skills",
-      "description": "選題推薦 + 多管道內容撰寫 + 影片剪輯字幕",
+      "name": "content-recommender",
+      "description": "分析近期文章，推薦值得產出的內容主題，附建議角度和參考資料",
       "source": "./",
       "skills": [
-        "./skills/content-recommender",
-        "./skills/content-writer",
+        "./skills/content-recommender"
+      ]
+    },
+    {
+      "name": "content-writer",
+      "description": "根據主題和參考資料，產出日報、短影片腳本、長文、Twitter Thread 草稿",
+      "source": "./",
+      "skills": [
+        "./skills/content-writer"
+      ]
+    },
+    {
+      "name": "clip-local",
+      "description": "本地影片剪輯 + 翻譯字幕 + CapCut 風格逐詞高亮，支援 YouTube、X/Twitter",
+      "source": "./",
+      "skills": [
         "./skills/clip-local"
       ]
     }
