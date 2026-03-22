@@ -96,22 +96,16 @@ claude --plugin-dir ./content-skills
 - **內嵌字幕處理** — 自動截圖偵測，用 `drawbox` 黑條蓋住避免重疊
 - **Whisper fallback** — 無字幕時透過 Groq API 語音轉文字
 
-## 組合工作流
+## 工作流程
 
-```
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│   「今天寫什麼」                                  │
-│        ↓                                        │
-│   content-recommender → 推薦主題 + 參考資料        │
-│        ↓                                        │
-│   「開始吧」                                      │
-│        ↓                                        │
-│   content-writer → 產出草稿（日報/腳本/長文）       │
-│        ↓                                        │
-│   clip-local → 剪輯影片 + 燒字幕                   │
-│                                                 │
-└─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A["「今天寫什麼」"] --> B[content-recommender]
+    B --> C["日報（綜合新聞）"]
+    B --> D["選題池（核心領域）"]
+    C --> E[content-writer<br/>日報草稿]
+    D --> F[content-writer<br/>腳本 / 長文]
+    F --> G[clip-local<br/>剪片 + 字幕]
 ```
 
 三個 skill 可以串接使用，也可以各自獨立：
