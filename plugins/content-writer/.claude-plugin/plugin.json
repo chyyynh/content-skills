@@ -1,0 +1,5 @@
+{
+  "name": "content-writer",
+  "description": "根據主題和參考資料，產出日報、短影片腳本、長文、Twitter Thread 草稿",
+  "version": "1.0.0"
+}
