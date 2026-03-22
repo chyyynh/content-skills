@@ -4,13 +4,13 @@
     "name": "chyyynh"
   },
   "metadata": {
-    "description": "內容產出工具鏈：從選題到撰寫"
+    "description": "內容產出工具鏈：從選題、撰寫到影片剪輯"
   },
   "plugins": [
     {
       "name": "content-skills",
       "source": "./plugins/content-skills",
-      "description": "選題推薦 + 多管道內容撰寫，基於 newsence 資料來源",
+      "description": "選題推薦 + 多管道內容撰寫 + 影片剪輯字幕，基於 newsence 資料來源",
       "version": "0.1.0"
     }
   ]
