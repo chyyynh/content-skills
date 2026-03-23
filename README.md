@@ -4,7 +4,7 @@
   <p align="center">
     <a href="https://github.com/anthropics/claude-code"><img src="https://img.shields.io/badge/Claude%20Code-Plugin-7c3aed?logo=claude&logoColor=white" alt="Claude Code Plugin"></a>
     <a href="https://github.com/chyyynh/content-skills"><img src="https://img.shields.io/github/last-commit/chyyynh/content-skills?label=updated" alt="Last Commit"></a>
-    <a href="https://github.com/chyyynh/content-skills"><img src="https://img.shields.io/badge/skills-3-blue" alt="Skills"></a>
+    <a href="https://github.com/chyyynh/content-skills"><img src="https://img.shields.io/badge/skills-4-blue" alt="Skills"></a>
   </p>
 </p>
 
@@ -20,6 +20,7 @@
 /plugin install content-recommender@content-skills
 /plugin install content-writer@content-skills
 /plugin install clip-local@content-skills
+/plugin install image-gen@content-skills
 ```
 
 <details>
@@ -40,6 +41,7 @@ claude --plugin-dir ./content-skills
 | yt-dlp | 影片下載（clip-local） | `brew install yt-dlp` |
 | ffmpeg | 影片處理（clip-local） | `brew install ffmpeg` |
 | GROQ_API_KEY | Whisper 語音轉文字（clip-local，可選） | [console.groq.com](https://console.groq.com) |
+| OPENROUTER_API_KEY | 圖片生成（image-gen） | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
 
 ## Skills
 
@@ -96,6 +98,23 @@ claude --plugin-dir ./content-skills
 - **內嵌字幕處理** — 自動截圖偵測，用 `drawbox` 黑條蓋住避免重疊
 - **Whisper fallback** — 無字幕時透過 Groq API 語音轉文字
 
+---
+
+### `image-gen` — 圖片生成
+
+> 透過 OpenRouter 生成圖片，支援文字生圖、參考圖片編輯、寬高比控制。
+
+**觸發**：`生成一張圖` `畫一張封面` `幫我做配圖`
+
+```
+接收 prompt → 呼叫 OpenRouter API → 儲存圖片
+```
+
+- **多模型** — 預設 Gemini 3.1 Flash，可切換 OpenRouter 上任何圖片模型
+- **參考圖片** — 傳入現有圖片進行編輯或風格參考
+- **寬高比** — 支援 `1:1`、`16:9`、`9:16`、`4:3` 等
+- **Prompt 檔案** — 從 markdown 檔案讀取 prompt，自動剝離 YAML frontmatter
+
 ## 工作流程
 
 ```mermaid
@@ -106,10 +125,13 @@ graph TD
     C --> E[content-writer<br/>日報草稿]
     D --> F[content-writer<br/>腳本 / 長文]
     F --> G[clip-local<br/>剪片 + 字幕]
+    E --> H[image-gen<br/>封面圖]
+    F --> H
 ```
 
-三個 skill 可以串接使用，也可以各自獨立：
+四個 skill 可以串接使用，也可以各自獨立：
 
 - **只要選題** — `今天有什麼值得做的題目`
 - **只要寫作** — `幫我把這篇文章改寫成 Twitter Thread`
 - **只要剪片** — `幫我剪這個 YouTube 影片 1:20-3:40 加中文字幕`
+- **只要生圖** — `幫我生成一張 16:9 的封面圖`
