@@ -21,11 +21,14 @@ ASS_SCRIPT=$(find ~/.claude/plugins -path '*/clip/*/scripts/ass-karaoke.py' 2>/d
 When the user does NOT specify start/end times (e.g., "幫我剪這個影片的精華" or "clip the best parts"):
 
 1. Download the full transcript (step 1–2 below)
-2. Read the entire transcript and identify 3–5 highlight segments. For each, note:
+2. Produce a scannable transcript for highlight detection:
+   - If the video has chapter markers (`yt-dlp --print chapters --no-playlist --no-warnings "<URL>"`), use those as the starting structure
+   - Otherwise, use `--dump-segments` on the full VTT to get deduplicated text, then scan in ~5-minute chunks rather than reading every line
+3. Identify 3–5 highlight segments. For each, note:
    - Start and end timestamps
    - A short description of why it's interesting (key insight, funny moment, dramatic turn, etc.)
-3. Present the highlights to the user as numbered options and ask which ones to clip
-4. Clip only the segments the user picks, then continue with the normal pipeline (translate, subtitle, etc.)
+4. Present the highlights to the user as numbered options and ask which ones to clip
+5. Clip only the segments the user picks, then continue with the normal pipeline (translate, subtitle, etc.)
 
 ## Pipeline
 
@@ -55,53 +58,79 @@ When clipping a portion (e.g., 10–130s), filter the VTT to only include cues w
 
 When filtering, strip any extra metadata from timestamp lines (e.g., `align:start position:0%`) — keep only `HH:MM:SS.mmm --> HH:MM:SS.mmm`. The ASS parser regex expects clean timestamp lines.
 
-### 4. Translate subtitles
+### 4. Extract clean segments for translation
 
-Write and execute a Python script that:
-1. Parses the trimmed VTT (regex: `HH:MM:SS.mmm --> HH:MM:SS.mmm` + text lines)
-2. Collects all text lines into a list
-3. You translate the list (print a Python list of translated strings)
-4. Writes a new VTT with identical timestamps and translated text
-
-Example structure:
-```python
-import re
-
-# Parse original VTT
-with open("clip.vtt") as f:
-    content = f.read()
-cues = re.findall(r'(\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3})\n((?:(?!\d{2}:\d{2}).+\n?)*)', content)
-
-# Translations — fill this list with your translations, one per cue
-translations = [
-    "translated line 1",
-    "translated line 2",
-    # ...
-]
-
-# Write translated VTT
-with open("clip_translated.vtt", "w") as f:
-    f.write("WEBVTT\n\n")
-    for (timestamp, _), translation in zip(cues, translations):
-        f.write(f"{timestamp}\n{translation.strip()}\n\n")
-```
-
-Generate this script with the `translations` list filled in, then execute it. This ensures timestamps stay exact and VTT format is correct.
-
-### 5. Generate ASS karaoke subtitles
+YouTube auto-subs use rolling captions — each raw cue is a sentence fragment with massive overlap. **Do NOT translate raw cues directly.** Instead, use `--dump-segments` to get deduplicated, clean text:
 
 ```bash
-python3 "$ASS_SCRIPT" <original.vtt> -o subs.ass -t <translated.vtt> --offset <START_SECONDS>
+python3 "$ASS_SCRIPT" clip.vtt --dump-segments --offset <START_SECONDS> > segments.json
 ```
 
-- First arg = **original language** VTT (karaoke timing on top line)
-- `-t` = **translated** VTT (shown below karaoke line)
-- `--offset` = clip start time (adjusts timestamps relative to clip start)
-- `--bg` = add opaque background box behind subtitle text (useful with `drawbox`, see below)
+This outputs a JSON array of deduplicated segments:
+```json
+[
+  {"index": 0, "start": 120.5, "end": 123.8, "text": "And yet the number of radiologists grew."},
+  {"index": 1, "start": 123.8, "end": 126.2, "text": "And so the question is why?"},
+  ...
+]
+```
 
-Handles YouTube rolling caption dedup, CJK per-char splitting, and bilingual layout.
+Typical reduction: 119 raw cues → ~59 clean segments for a 2.5-minute clip.
 
-### 6. Check for burned-in subtitles
+### 5. Translate segments
+
+Read `segments.json`, translate each segment's `text` field, and write a `translations.json`:
+
+```json
+{"0": "然而放射科医生的数量反而增加了。", "1": "那问题是：为什么？", ...}
+```
+
+Write and execute a Python script like:
+```python
+import json
+
+with open("segments.json") as f:
+    segments = json.load(f)
+
+translations = {
+    "0": "translated segment 0",
+    "1": "translated segment 1",
+    # ... one entry per segment index
+}
+
+with open("translations.json", "w") as f:
+    json.dump(translations, f, ensure_ascii=False, indent=2)
+```
+
+Generate this script with the `translations` dict filled in, then execute it.
+
+Key points:
+- Translate **complete segments**, not raw cue fragments
+- The index keys must match segment indices from `segments.json`
+- Review: after writing, print 3–5 sample lines (`original → translation`) for the user to sanity-check before burning
+
+### 6. Generate ASS subtitles
+
+**Bilingual mode** (original karaoke + translation below):
+```bash
+python3 "$ASS_SCRIPT" clip.vtt -o subs.ass --translations translations.json --offset <START_SECONDS>
+```
+
+**Translation-only mode** (only translated text, no original):
+```bash
+python3 "$ASS_SCRIPT" clip.vtt -o subs.ass --translations translations.json --offset <START_SECONDS> --translation-only
+```
+
+Options:
+- First arg = **original language** VTT (used for timing; in bilingual mode, also for karaoke display)
+- `--translations` = translations JSON file (index-keyed, matches `--dump-segments` output)
+- `--translation` `-t` = legacy: translated VTT file (still supported but `--translations` is preferred)
+- `--offset` = clip start time in seconds (adjusts timestamps relative to clip start)
+- `--bg` = add opaque background box behind subtitle text (useful with `drawbox`)
+- `--translation-only` = hide original karaoke line, show only translation (larger font, centered)
+- `--dump-segments` = output deduplicated segments as JSON to stdout and exit
+
+### 7. Check for burned-in subtitles
 
 Before clipping, extract a frame during the speech portion to check if the video already has hardcoded subtitles:
 
@@ -109,9 +138,9 @@ Before clipping, extract a frame during the speech portion to check if the video
 ffmpeg -y -ss <MID_SPEECH_TIME> -i "$VIDEO_URL" -frames:v 1 -q:v 2 frame_check.jpg
 ```
 
-Visually inspect the frame. If burned-in subtitles are present at the bottom (common on X/Twitter videos), use `drawbox` in step 7 to cover them with a full-width black strip before overlaying the ASS subs.
+Visually inspect the frame. If burned-in subtitles are present at the bottom (common on X/Twitter videos), use `drawbox` in step 8 to cover them with a full-width black strip before overlaying the ASS subs.
 
-### 7. Resolve stream URLs and clip
+### 8. Resolve stream URLs and clip
 
 Get both video + audio URLs in **one call**:
 

@@ -8,11 +8,15 @@ Bilingual: Original karaoke on top (MarginV=100), translation on bottom (MarginV
 
 Usage:
   python3 ass-karaoke.py <input.vtt> [-o subs.ass] [-t translated.vtt] [--offset N] [--bg]
+  python3 ass-karaoke.py <input.vtt> --dump-segments          # output deduped segments as JSON
+  python3 ass-karaoke.py <input.vtt> --translations t.json    # translations via JSON (index-keyed)
+  python3 ass-karaoke.py <input.vtt> --translation-only -t ..  # show only translation line
 
 Requires Python 3.6+.
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -44,6 +48,14 @@ STYLES_DEFAULT = (
 STYLES_BG = (
     "Style: Default,Noto Sans TC,60,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,100,1\n"
     "Style: Translation,Noto Sans TC,44,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,3,0,2,40,40,40,1"
+)
+
+STYLES_TRANSLATION_ONLY = (
+    "Style: Translation,Noto Sans TC,56,&H00FFFFFF,&H00555555,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,3,2,40,40,50,1"
+)
+
+STYLES_TRANSLATION_ONLY_BG = (
+    "Style: Translation,Noto Sans TC,56,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,50,1"
 )
 
 
@@ -166,13 +178,34 @@ def suffix_prefix_overlap(a, b):
     return 0
 
 
+def load_translations_json(path):
+    # type: (str) -> Dict[int, str]
+    """Load translations from a JSON file. Accepts list or dict format.
+
+    List format:   [{"index": 0, "text": "..."}, ...]
+    Dict format:   {"0": "...", "1": "..."}
+    """
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    result = {}  # type: Dict[int, str]
+    if isinstance(data, list):
+        for item in data:
+            result[int(item["index"])] = item["text"]
+    elif isinstance(data, dict):
+        for k, v in data.items():
+            result[int(k)] = v
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Generate ASS subtitles with karaoke highlighting")
     parser.add_argument("input", help="Input VTT file")
     parser.add_argument("--output", "-o", default="subs.ass", help="Output ASS file")
     parser.add_argument("--translation", "-t", help="Translated VTT for bilingual display")
+    parser.add_argument("--translations", help="Translations JSON file (index-keyed, avoids VTT dedup mismatch)")
     parser.add_argument("--offset", type=float, default=0, help="Time offset (clip start time in seconds)")
     parser.add_argument("--bg", action="store_true", help="Use opaque background box behind subtitles (BorderStyle=3)")
+    parser.add_argument("--dump-segments", action="store_true", help="Output deduplicated segments as JSON to stdout and exit")
+    parser.add_argument("--translation-only", action="store_true", help="Show only translation line (no original karaoke)")
     args = parser.parse_args()
 
     segments = parse_vtt(args.input)
@@ -180,13 +213,31 @@ def main():
         print("[ass] No segments found in VTT", file=sys.stderr)
         sys.exit(1)
 
+    # --dump-segments: output deduped segments and exit
+    if args.dump_segments:
+        out = []
+        for i, seg in enumerate(segments):
+            out.append({"index": i, "start": seg["start"], "end": seg["end"], "text": seg["text"]})
+        json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
+        print()  # trailing newline
+        sys.exit(0)
+
+    # Load translations from JSON (preferred) or VTT (legacy)
     translations = {}  # type: Dict[int, str]
-    if args.translation:
+    if args.translations:
+        translations = load_translations_json(args.translations)
+    elif args.translation:
         trans_segs = parse_vtt(args.translation)
         for i, seg in enumerate(trans_segs):
             if i < len(segments):
                 translations[i] = seg["text"]
 
+    # Validate: --translation-only requires translations
+    if args.translation_only and not translations:
+        print("[ass] --translation-only requires --translation or --translations", file=sys.stderr)
+        sys.exit(1)
+
+    # Build events
     events = []  # type: List[str]
     for i, seg in enumerate(segments):
         rel_start = max(0, seg["start"] - args.offset)
@@ -195,16 +246,25 @@ def main():
         end = format_ass_time(rel_end)
         duration_cs = round((rel_end - rel_start) * 100)
 
-        karaoke = build_karaoke(seg["text"], duration_cs)
-        events.append("Dialogue: 0,{},{},Default,,0,0,0,,{}".format(start, end, karaoke))
+        if not args.translation_only:
+            karaoke = build_karaoke(seg["text"], duration_cs)
+            events.append("Dialogue: 0,{},{},Default,,0,0,0,,{}".format(start, end, karaoke))
 
         if i in translations:
             events.append("Dialogue: 1,{},{},Translation,,0,0,0,,{}".format(start, end, escape_ass(translations[i])))
 
-    styles = STYLES_BG if args.bg else STYLES_DEFAULT
+    # Pick style set
+    if args.translation_only:
+        styles = STYLES_TRANSLATION_ONLY_BG if args.bg else STYLES_TRANSLATION_ONLY
+    else:
+        styles = STYLES_BG if args.bg else STYLES_DEFAULT
+
     header = ASS_HEADER_TEMPLATE.format(styles=styles)
     Path(args.output).write_text(header + "\n".join(events) + "\n", encoding="utf-8")
-    print("[ass] Generated {} ({} segments, {} translations)".format(args.output, len(segments), len(translations)))
+
+    mode = "translation-only" if args.translation_only else "bilingual" if translations else "karaoke"
+    print("[ass] Generated {} ({} segments, {} translations, mode={})".format(
+        args.output, len(segments), len(translations), mode))
 
 
 if __name__ == "__main__":
