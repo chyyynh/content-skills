@@ -50,12 +50,20 @@ STYLES_BG = (
     "Style: Translation,Noto Sans TC,44,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,3,0,2,40,40,40,1"
 )
 
+STYLES_KARAOKE_ONLY = (
+    "Style: Default,Noto Sans TC,64,&H00FFFFFF,&H00555555,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,3,2,40,40,50,1"
+)
+
+STYLES_KARAOKE_ONLY_BG = (
+    "Style: Default,Noto Sans TC,64,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,50,1"
+)
+
 STYLES_TRANSLATION_ONLY = (
-    "Style: Translation,Noto Sans TC,56,&H00FFFFFF,&H00555555,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,3,2,40,40,50,1"
+    "Style: Translation,Noto Sans TC,64,&H00FFFFFF,&H00555555,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,4,3,2,40,40,50,1"
 )
 
 STYLES_TRANSLATION_ONLY_BG = (
-    "Style: Translation,Noto Sans TC,56,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,50,1"
+    "Style: Translation,Noto Sans TC,64,&H00FFFFFF,&H00555555,&H00000000,&HC0000000,-1,0,0,0,100,100,0,0,3,4,0,2,40,40,50,1"
 )
 
 
@@ -124,12 +132,14 @@ def parse_vtt_time(ts):
 def parse_vtt(path):
     # type: (str) -> List[dict]
     content = Path(path).read_text(encoding="utf-8")
-    pattern = r"(\d{2}:\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3})\n((?:(?!\d{2}:\d{2}:\d{2}).+\n?)*)"
+    pattern = r"(\d{2}:\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3})[^\n]*\n((?:(?!\d{2}:\d{2}:\d{2}).+\n?)*)"
     segments = []  # type: List[dict]
     for match in re.finditer(pattern, content):
         start = parse_vtt_time(match.group(1))
         end = parse_vtt_time(match.group(2))
         text = re.sub(r"<[^>]+>", "", match.group(3)).strip().replace("\n", " ")
+        text = text.replace("&gt;", ">")
+        text = re.sub(r">{2,}\s*", "", text).strip()
         if text:
             if segments and segments[-1]["text"] == text:
                 segments[-1]["end"] = end
@@ -256,6 +266,8 @@ def main():
     # Pick style set
     if args.translation_only:
         styles = STYLES_TRANSLATION_ONLY_BG if args.bg else STYLES_TRANSLATION_ONLY
+    elif not translations:
+        styles = STYLES_KARAOKE_ONLY_BG if args.bg else STYLES_KARAOKE_ONLY
     else:
         styles = STYLES_BG if args.bg else STYLES_DEFAULT
 

@@ -56,7 +56,7 @@ Replace `<LANG>` with the base language code from step 1 (e.g., `en`, `ja`). The
 
 When clipping a portion (e.g., 10–130s), filter the VTT to only include cues whose timestamps fall within the range. **Keep the original absolute timestamps — do NOT adjust them.** The `--offset` flag in `ass-karaoke.py` handles the time shift.
 
-When filtering, strip any extra metadata from timestamp lines (e.g., `align:start position:0%`) — keep only `HH:MM:SS.mmm --> HH:MM:SS.mmm`. The ASS parser regex expects clean timestamp lines.
+Note: `ass-karaoke.py` automatically handles VTT metadata (e.g., `align:start position:0%`) and YouTube speaker markers (`>>`). No manual stripping needed.
 
 ### 4. Extract clean segments for translation
 
@@ -160,6 +160,60 @@ Then clip with ffmpeg:
 - Input seeking: `-ss <START>` before each `-i`
 - Separate streams: `-map 0:v:0 -map 1:a:0`
 
+### 9. Cover image (optional)
+
+When the user asks for a cover/title card prepended to the clip:
+
+#### a. Extract a base frame
+
+Pick a visually interesting frame from the clip (the subject speaking, gesturing, etc.):
+
+```bash
+ffmpeg -y -ss <GOOD_TIMESTAMP> -i "$VIDEO_URL" -frames:v 1 -q:v 2 cover_base.jpg
+```
+
+#### b. Overlay text with ffmpeg drawtext
+
+Use `font='family name'` (NOT `fontfile=xxx.ttc` — TTC collections cause tofu/boxes).
+
+```bash
+ffmpeg -y -i cover_base.jpg -vf "\
+eq=brightness=-0.35:contrast=1.05,\
+drawbox=x=0:y=0:w=iw:h=ih:color=black@0.35:t=fill,\
+drawtext=text='主標題':font='Songti TC':fontsize=56:fontcolor=white:x=100:y=(h/2)-40,\
+drawtext=text='副標題 / 人名':font='PingFang TC':fontsize=24:fontcolor=0xAAAAAA:x=100:y=(h/2)+40\
+" cover.jpg
+```
+
+Design tips:
+- Dark overlay (`drawbox black@0.35`) ensures text可讀
+- Left-aligned + size contrast (大標題 vs 小副標) looks more editorial than centered
+- 宋體 (Songti) for titles gives a literary feel; 黑體 (PingFang/Heiti) for clean modern look
+
+#### c. Create cover video matching main clip specs
+
+**Critical: the cover clip must match the main clip's fps and sample rate**, otherwise `concat` will produce wrong duration.
+
+```bash
+# Read main clip specs
+FPS=$(ffprobe -v quiet -select_streams v -show_entries stream=r_frame_rate -of csv=p=0 main.mp4)
+SR=$(ffprobe -v quiet -select_streams a -show_entries stream=sample_rate -of csv=p=0 main.mp4)
+
+# Create 3-second cover with matching specs
+ffmpeg -y -loop 1 -i cover.jpg -f lavfi -i anullsrc=r=${SR}:cl=stereo \
+  -t 3 -vf "scale=1280:720" \
+  -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r $FPS \
+  -c:a aac -b:a 128k -shortest cover_clip.mp4
+```
+
+#### d. Concat cover + main clip
+
+```bash
+echo "file 'cover_clip.mp4'" > concat.txt
+echo "file 'main.mp4'" >> concat.txt
+ffmpeg -y -f concat -safe 0 -i concat.txt -c copy final.mp4
+```
+
 ### Whisper fallback (no YouTube subs)
 
 If yt-dlp finds no auto-subs and user has `GROQ_API_KEY` set:
@@ -177,3 +231,5 @@ If `GROQ_API_KEY` is not set, inform the user that no subtitles are available an
 - Groq 25MB audio limit: split audio for videos >50min
 - Stream URLs expire ~6h: re-resolve if clip fails
 - Subtitle burning re-encodes video (~1–3 min for 60s clip)
+- **CJK drawtext tofu**: use `font='PingFang TC'` (family name), NOT `fontfile=/path/to/Font.ttc` — TTC font collections render CJK as boxes
+- **Concat duration wrong**: cover clip and main clip must have identical fps and audio sample rate. Always `ffprobe` the main clip first and match when creating the cover clip
