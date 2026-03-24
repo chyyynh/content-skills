@@ -1,5 +1,5 @@
 ---
-name: clip-local
+name: clip
 description: Clips a YouTube video locally using yt-dlp and ffmpeg. Supports auto-highlight detection, translation, and CapCut-style karaoke subtitle burning. Triggers when the user wants local video clipping, highlight extraction, or subtitle generation. Optional GROQ_API_KEY env var enables Whisper transcription fallback when YouTube has no subtitles.
 argument-hint: "[youtube-url-or-id] [start] [end] [output]"
 ---
@@ -13,7 +13,7 @@ Requires `yt-dlp`, `ffmpeg`, and `python3`. Check with `command -v`.
 The ASS karaoke generator is bundled with this plugin. Locate it once at the start (this only searches for the plugin's own bundled file):
 
 ```bash
-ASS_SCRIPT=$(find ~/.claude/plugins -path '*/clip-local/*/scripts/ass-karaoke.py' 2>/dev/null | head -1)
+ASS_SCRIPT=$(find ~/.claude/plugins -path '*/clip/*/scripts/ass-karaoke.py' 2>/dev/null | head -1)
 ```
 
 ## Auto-highlight mode

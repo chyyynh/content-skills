@@ -1,5 +1,5 @@
 {
-  "name": "image-gen",
+  "name": "image",
   "description": "AI 圖片生成（OpenRouter），支援文字生圖、參考圖片編輯、寬高比控制",
   "version": "1.0.1"
 }

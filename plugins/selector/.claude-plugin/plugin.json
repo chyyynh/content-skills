@@ -1,5 +1,5 @@
 {
-  "name": "content-recommender",
+  "name": "selector",
   "description": "分析近期文章，推薦值得產出的內容主題，附建議角度和參考資料",
   "version": "1.0.1"
 }

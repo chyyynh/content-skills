@@ -77,8 +77,8 @@ function parseArgs(argv) {
 
 function loadEnvFile() {
   const paths = [
-    resolve(process.cwd(), ".image-gen/.env"),
-    resolve(process.env.HOME || "~", ".image-gen/.env"),
+    resolve(process.cwd(), ".image/.env"),
+    resolve(process.env.HOME || "~", ".image/.env"),
   ];
 
   for (const p of paths) {

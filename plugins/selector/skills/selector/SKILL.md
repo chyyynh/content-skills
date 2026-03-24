@@ -1,5 +1,5 @@
 ---
-name: content-recommender
+name: selector
 description: >
   分析 newsence 來源的近期文章，推薦值得產出的內容主題，每個推薦附帶參考資料和建議角度。
   涵蓋日報、短影片、長文等管道。
@@ -112,7 +112,7 @@ description: >
 
 ### 5. 銜接寫作
 
-用戶選定主題後，引導到 content-writer skill，帶上：
+用戶選定主題後，引導到 writer skill，帶上：
 - 選定的 newsence article id（參考資料）
 - 建議的管道和角度
 - 用戶補充的方向

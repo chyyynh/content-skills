@@ -17,10 +17,10 @@
 /plugin marketplace add chyyynh/content-skills
 
 # 安裝想要的 plugin（可分開裝）
-/plugin install content-recommender@content-skills
-/plugin install content-writer@content-skills
-/plugin install clip-local@content-skills
-/plugin install image-gen@content-skills
+/plugin install selector@content-skills
+/plugin install writer@content-skills
+/plugin install clip@content-skills
+/plugin install image@content-skills
 ```
 
 <details>
@@ -37,15 +37,15 @@ claude --plugin-dir ./content-skills
 
 | 依賴 | 用途 | 安裝 |
 |------|------|------|
-| [newsence](https://www.npmjs.com/package/newsence) | 文章資料來源（recommender / writer） | `claude mcp add newsence -- npx newsence mcp` |
-| yt-dlp | 影片下載（clip-local） | `brew install yt-dlp` |
-| ffmpeg | 影片處理（clip-local） | `brew install ffmpeg` |
-| GROQ_API_KEY | Whisper 語音轉文字（clip-local，可選） | [console.groq.com](https://console.groq.com) |
-| OPENROUTER_API_KEY | 圖片生成（image-gen） | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
+| [newsence](https://www.npmjs.com/package/newsence) | 文章資料來源（selector / writer） | `claude mcp add newsence -- npx newsence mcp` |
+| yt-dlp | 影片下載（clip） | `brew install yt-dlp` |
+| ffmpeg | 影片處理（clip） | `brew install ffmpeg` |
+| GROQ_API_KEY | Whisper 語音轉文字（clip，可選） | [console.groq.com](https://console.groq.com) |
+| OPENROUTER_API_KEY | 圖片生成（image） | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
 
 ## Skills
 
-### `content-recommender` — 選題推薦
+### `selector` — 選題推薦
 
 > 分析近期文章，推薦值得產出的內容主題，附建議角度和參考資料。
 
@@ -59,7 +59,7 @@ claude --plugin-dir ./content-skills
 
 ---
 
-### `content-writer` — 內容撰寫
+### `writer` — 內容撰寫
 
 > 根據主題和參考資料，產出不同管道的內容草稿。
 
@@ -80,7 +80,7 @@ claude --plugin-dir ./content-skills
 
 ---
 
-### `clip-local` — 影片剪輯 + 字幕
+### `clip` — 影片剪輯 + 字幕
 
 > 本地剪輯影片，支援翻譯字幕、CapCut 風格逐詞高亮、自動精華偵測。
 
@@ -100,7 +100,7 @@ claude --plugin-dir ./content-skills
 
 ---
 
-### `image-gen` — 圖片生成
+### `image` — 圖片生成
 
 > 透過 OpenRouter 生成圖片，支援文字生圖、參考圖片編輯、寬高比控制。
 
@@ -119,13 +119,13 @@ claude --plugin-dir ./content-skills
 
 ```mermaid
 graph TD
-    A["「今天寫什麼」"] --> B[content-recommender]
+    A["「今天寫什麼」"] --> B[selector]
     B --> C["日報（綜合新聞）"]
     B --> D["選題池（核心領域）"]
-    C --> E[content-writer<br/>日報草稿]
-    D --> F[content-writer<br/>腳本 / 長文]
-    F --> G[clip-local<br/>剪片 + 字幕]
-    E --> H[image-gen<br/>封面圖]
+    C --> E[writer<br/>日報草稿]
+    D --> F[writer<br/>腳本 / 長文]
+    F --> G[clip<br/>剪片 + 字幕]
+    E --> H[image<br/>封面圖]
     F --> H
 ```
 

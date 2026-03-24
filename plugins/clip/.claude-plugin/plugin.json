@@ -1,5 +1,5 @@
 {
-  "name": "clip-local",
+  "name": "clip",
   "description": "本地影片剪輯 + 翻譯字幕 + CapCut 風格逐詞高亮，支援 YouTube、X/Twitter",
   "version": "1.0.1"
 }
