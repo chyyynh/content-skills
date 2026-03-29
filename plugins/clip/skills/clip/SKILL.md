@@ -112,17 +112,34 @@ Key points:
 
 ### 6. Generate ASS subtitles
 
-**Bilingual mode** (original karaoke + translation below):
+**Ask the user** which subtitle style to use before generating. Present these options:
+
+```
+字幕樣式：
+1. 雙語卡拉OK — 原文在上（逐詞高亮），翻譯在下
+2. 純翻譯 — 只顯示翻譯，大字居中
+3. 純原文卡拉OK — 只顯示原文逐詞高亮，不翻譯
+4. 不加字幕
+```
+
+Then generate based on the user's choice:
+
 ```bash
+# 1. 雙語卡拉OK
 python3 "$ASS_SCRIPT" clip.vtt -o subs.ass --translations translations.json --offset <START_SECONDS>
-```
 
-**Translation-only mode** (only translated text, no original):
-```bash
+# 2. 純翻譯
 python3 "$ASS_SCRIPT" clip.vtt -o subs.ass --translations translations.json --offset <START_SECONDS> --translation-only
+
+# 3. 純原文卡拉OK（不需要 translations.json，跳過 step 5）
+python3 "$ASS_SCRIPT" clip.vtt -o subs.ass --offset <START_SECONDS>
+
+# 4. 不加字幕 — 跳過此步，step 8 使用 -c copy
 ```
 
-Options:
+If the user picks option 3 or 4, step 5 (translation) can be skipped entirely.
+
+Script flags reference:
 - First arg = **original language** VTT (used for timing; in bilingual mode, also for karaoke display)
 - `--translations` = translations JSON file (index-keyed, matches `--dump-segments` output)
 - `--translation` `-t` = legacy: translated VTT file (still supported but `--translations` is preferred)
