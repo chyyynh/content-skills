@@ -1,6 +1,6 @@
 ---
 name: clip
-description: Clips a YouTube video locally using yt-dlp and ffmpeg. Supports auto-highlight detection, translation, and CapCut-style karaoke subtitle burning. Triggers when the user wants local video clipping, highlight extraction, or subtitle generation. Optional GROQ_API_KEY env var enables Whisper transcription fallback when YouTube has no subtitles.
+description: Clips a YouTube video locally using yt-dlp and ffmpeg. Supports 9:16 short video format with AI cover image and ElevenLabs hook voiceover, auto-highlight detection, translation, and CapCut-style karaoke subtitle burning. Triggers when the user wants local video clipping, highlight extraction, short video creation, or subtitle generation. Optional env vars: GROQ_API_KEY (Whisper fallback), ELEVENLABS_API_KEY (hook voiceover), OPENROUTER_API_KEY (AI cover image).
 argument-hint: "[youtube-url-or-id] [start] [end] [output]"
 ---
 
@@ -10,10 +10,11 @@ Requires `yt-dlp`, `ffmpeg`, and `python3`. Check with `command -v`.
 
 ## Finding plugin scripts
 
-The ASS karaoke generator is bundled with this plugin. Locate it once at the start (this only searches for the plugin's own bundled file):
+The ASS karaoke generator is bundled with this plugin. The AI cover image generator is in the image plugin. Locate both once at the start:
 
 ```bash
 ASS_SCRIPT=$(find ~/.claude/plugins -path '*/clip/*/scripts/ass-karaoke.py' 2>/dev/null | head -1)
+IMG_SCRIPT=$(find ~/.claude/plugins -path '*/image/*/scripts/main.mjs' 2>/dev/null | head -1)
 ```
 
 ## Auto-highlight mode
@@ -160,58 +161,176 @@ Then clip with ffmpeg:
 - Input seeking: `-ss <START>` before each `-i`
 - Separate streams: `-map 0:v:0 -map 1:a:0`
 
-### 9. Cover image (optional)
+#### 9:16 短影片格式
 
-When the user asks for a cover/title card prepended to the clip:
+For vertical short video, append crop + scale to the end of the `-vf` chain:
 
-#### a. Extract a base frame
+- **Center crop** (talking head, default): append `,crop=ih*9/16:ih,scale=1080:1920`
+  - With subs: `-vf "ass=subs.ass,crop=ih*9/16:ih,scale=1080:1920"`
+  - With burned-in subs: `-vf "drawbox=...,ass=subs.ass,crop=ih*9/16:ih,scale=1080:1920"`
+  - Without subs: `-vf "crop=ih*9/16:ih,scale=1080:1920"` (cannot use `-c copy`)
+- **Blur background** (preserve full frame, wider shots — recommended): use `-filter_complex` instead of `-vf`, and **replace** the normal `-map` flags with `-map "[v]" -map 1:a:0` only. Do NOT keep the original `-map 0:v:0 -map 1:a:0` — that would create duplicate streams.
+  - Single-pass example (with subs):
+    ```bash
+    ffmpeg -y -ss <START> -i "$VIDEO_URL" -ss <START> -i "$AUDIO_URL" -t <DURATION> \
+      -filter_complex "[0:v]ass=subs.ass,split=2[fg][bg];[bg]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=25[bgb];[fg]scale=1080:-2[fgs];[bgb][fgs]overlay=(W-w)/2:(H-h)/2[v]" \
+      -map "[v]" -map 1:a:0 \
+      -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -movflags +faststart main.mp4
+    ```
+  - Without subs: remove `ass=subs.ass,` from the filter chain
+  - Two-pass alternative: clip normally (16:9) → `temp.mp4`, then convert:
+    ```bash
+    ffmpeg -y -i temp.mp4 -filter_complex "[0:v]split=2[fg][bg];[bg]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=25[bgb];[fg]scale=1080:-2[fgs];[bgb][fgs]overlay=(W-w)/2:(H-h)/2[v]" \
+      -map "[v]" -map 0:a -c:v libx264 -preset fast -crf 23 -c:a copy main.mp4
+    ```
 
-Pick a visually interesting frame from the clip (the subject speaking, gesturing, etc.):
+Default to blur background for short video (preserves full frame). Use center crop only when the user asks or the content is a centered talking head.
+
+### 9. Short video intro (Hook + AI Cover + Voiceover)
+
+Generate a hook intro before the main clip. Structure: **cover image + hook voiceover (3–5s)** → **main clip with subtitles** → **CTA outro (optional)**.
+
+#### a. Script planning
+
+**If `clip-brief.md` exists in the working directory**（from writer skill）: read it and extract hook text, cover description, CTA text. Skip to step b.
+
+**Otherwise**, plan the script based on the clip content. Read `references/hook-formulas.md` for the full formula library. The process:
+
+1. **Analyze content**: Based on the transcript/segments, identify the core message and emotional tone
+2. **Pick hook formula**: Match content type to the best hook formula:
+
+   | 內容類型 | 推薦 Hook |
+   |---------|----------|
+   | 突發新聞/產品發布 | FOMO（"_____ 你聽說了嗎？"）、緊急（"在你 _____ 之前"） |
+   | 爭議性觀點 | 顛覆（"你以為的 _____ 全錯了"） |
+   | 工具評測/教學 | 緊急、錯誤（"X 個常見錯誤"） |
+   | 數據報告/趨勢 | 數據（"只有 X% 的人知道"） |
+   | 科普解釋 | 直球（"X 分鐘搞懂 _____"） |
+
+3. **Write hook**: Fill in the template, keep it **under 30 characters** and colloquial — it will be spoken aloud via TTS. Test by reading it out loud: if it sounds unnatural, rewrite.
+4. **Write cover text**: Main title (≤10 chars) + optional subtitle
+5. **Write CTA** (optional): One line for the outro, platform-appropriate
+6. **Present to user**: Show the hook, cover text, and CTA for approval before proceeding
+
+**Output** (confirm with user):
+```
+Hook 配音：[spoken hook text]
+封面主標：[big title on cover]
+封面副標：[subtitle, optional]
+CTA：[outro text, optional]
+```
+
+#### b. Generate cover image
+
+**With image plugin** (requires `OPENROUTER_API_KEY` and `IMG_SCRIPT`):
+
+```bash
+node "$IMG_SCRIPT" --prompt "<COVER_DESCRIPTION>" --ar 9:16 --image cover.png
+```
+
+The prompt should describe a visually striking image related to the clip topic. Good cover prompts include subject, mood, and composition — e.g., "A dramatic close-up portrait of a tech executive speaking on stage, dark background with blue stage lighting, cinematic film grain, bold white Chinese title text overlaid in the center".
+
+**Fallback** (no image plugin): extract a frame and use drawtext:
 
 ```bash
 ffmpeg -y -ss <GOOD_TIMESTAMP> -i "$VIDEO_URL" -frames:v 1 -q:v 2 cover_base.jpg
-```
-
-#### b. Overlay text with ffmpeg drawtext
-
-Use `font='family name'` (NOT `fontfile=xxx.ttc` — TTC collections cause tofu/boxes).
-
-```bash
 ffmpeg -y -i cover_base.jpg -vf "\
+crop=ih*9/16:ih,scale=1080:1920,\
 eq=brightness=-0.35:contrast=1.05,\
 drawbox=x=0:y=0:w=iw:h=ih:color=black@0.35:t=fill,\
-drawtext=text='主標題':font='Songti TC':fontsize=56:fontcolor=white:x=100:y=(h/2)-40,\
-drawtext=text='副標題 / 人名':font='PingFang TC':fontsize=24:fontcolor=0xAAAAAA:x=100:y=(h/2)+40\
-" cover.jpg
+drawtext=text='主標題':font='Songti TC':fontsize=80:fontcolor=white:x=(w-text_w)/2:y=(h/2)-60,\
+drawtext=text='副標題':font='PingFang TC':fontsize=36:fontcolor=0xAAAAAA:x=(w-text_w)/2:y=(h/2)+40\
+" cover.png
 ```
 
-Design tips:
-- Dark overlay (`drawbox black@0.35`) ensures text可讀
-- Left-aligned + size contrast (大標題 vs 小副標) looks more editorial than centered
-- 宋體 (Songti) for titles gives a literary feel; 黑體 (PingFang/Heiti) for clean modern look
-
-#### c. Create cover video matching main clip specs
-
-**Critical: the cover clip must match the main clip's fps and sample rate**, otherwise `concat` will produce wrong duration.
+#### c. Generate hook voiceover (requires `ELEVENLABS_API_KEY`)
 
 ```bash
-# Read main clip specs
-FPS=$(ffprobe -v quiet -select_streams v -show_entries stream=r_frame_rate -of csv=p=0 main.mp4)
-SR=$(ffprobe -v quiet -select_streams a -show_entries stream=sample_rate -of csv=p=0 main.mp4)
+curl -s -X POST "https://api.elevenlabs.io/v1/text-to-speech/<VOICE_ID>?output_format=mp3_44100_128" \
+  -H "xi-api-key: $ELEVENLABS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "<HOOK_TEXT>",
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": {"stability": 0.5, "similarity_boost": 0.75, "speed": 1.05}
+  }' \
+  --output hook.mp3
+```
 
-# Create 3-second cover with matching specs
-ffmpeg -y -loop 1 -i cover.jpg -f lavfi -i anullsrc=r=${SR}:cl=stereo \
-  -t 3 -vf "scale=1280:720" \
+To list available voices and pick one:
+```bash
+curl -s "https://api.elevenlabs.io/v1/voices" -H "xi-api-key: $ELEVENLABS_API_KEY" | \
+  python3 -c "import sys,json; [print(f'{v[\"voice_id\"]}: {v[\"name\"]}') for v in json.load(sys.stdin)['voices'][:20]]"
+```
+
+Present the voice list to the user and let them pick. Cache the chosen voice_id for subsequent clips.
+
+If `ELEVENLABS_API_KEY` is not set, skip voiceover and use silent audio in step d.
+
+#### d. Create intro clip
+
+**Critical: the intro clip must match the main clip's fps and audio sample rate**, otherwise `concat` will produce wrong duration.
+
+```bash
+FPS=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 main.mp4 | head -1)
+SR=$(ffprobe -v quiet -select_streams a:0 -show_entries stream=sample_rate -of csv=p=0 main.mp4 | head -1)
+```
+
+With voiceover:
+```bash
+ffmpeg -y -loop 1 -i cover.png -i hook.mp3 \
+  -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" \
   -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r $FPS \
-  -c:a aac -b:a 128k -shortest cover_clip.mp4
+  -c:a aac -b:a 128k -ar $SR -shortest intro.mp4
 ```
 
-#### d. Concat cover + main clip
+Without voiceover (fallback):
+```bash
+ffmpeg -y -loop 1 -i cover.png -f lavfi -i anullsrc=r=${SR}:cl=stereo \
+  -t 3 -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" \
+  -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r $FPS \
+  -c:a aac -b:a 128k -shortest intro.mp4
+```
+
+#### e. CTA outro (optional)
+
+If the user approved a CTA in step a, create an outro clip. Two options:
+
+**With TTS CTA** (has `ELEVENLABS_API_KEY`): generate CTA voiceover the same way as step c, then:
+```bash
+# Use the last frame of main.mp4 as outro background, or use cover.png
+ffmpeg -y -loop 1 -i cover.png -i cta.mp3 \
+  -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" \
+  -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r $FPS \
+  -c:a aac -b:a 128k -ar $SR -shortest outro.mp4
+```
+
+**Text-only CTA** (no TTS): 3-second silent outro with CTA text burned on:
+```bash
+ffmpeg -y -loop 1 -i cover.png -f lavfi -i anullsrc=r=${SR}:cl=stereo \
+  -t 3 -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,\
+drawtext=text='<CTA_TEXT>':font='PingFang TC':fontsize=48:fontcolor=white:x=(w-text_w)/2:y=(h/2)" \
+  -c:v libx264 -preset fast -crf 23 -pix_fmt yuv420p -r $FPS \
+  -c:a aac -b:a 128k -shortest outro.mp4
+```
+
+#### f. Concat final video
+
+**Must re-encode** — do NOT use `-c copy`. Intro and main will have different AAC encoder profiles; `-c copy` concat causes audio to drop after the first segment switches.
 
 ```bash
-echo "file 'cover_clip.mp4'" > concat.txt
+# With outro
+echo "file 'intro.mp4'" > concat.txt
 echo "file 'main.mp4'" >> concat.txt
-ffmpeg -y -f concat -safe 0 -i concat.txt -c copy final.mp4
+echo "file 'outro.mp4'" >> concat.txt
+ffmpeg -y -f concat -safe 0 -i concat.txt \
+  -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -ar 48000 -movflags +faststart final.mp4
+
+# Without outro
+echo "file 'intro.mp4'" > concat.txt
+echo "file 'main.mp4'" >> concat.txt
+ffmpeg -y -f concat -safe 0 -i concat.txt \
+  -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -ar 48000 -movflags +faststart final.mp4
 ```
 
 ### Whisper fallback (no YouTube subs)

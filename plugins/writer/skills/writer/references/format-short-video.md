@@ -122,3 +122,49 @@ Hook 決定 80% 的完播率。以下是經過驗證有效的 Hook 模式：
 - ❌ 堆砌太多信息，觀眾消化不了 → 一條影片只講 1 個核心觀點
 - ❌ 結尾突然結束，沒有收束感 → 最後一句要有力
 - ❌ 用書面語口播 → 寫完後用「念出來」測試，念起來順才行
+
+---
+
+### Clip 執行摘要
+
+寫完腳本後，在末尾附上以下結構化摘要。clip skill 會讀取這個摘要來驅動影片剪輯、封面生成、和配音。
+
+```markdown
+---
+
+## Clip 執行摘要
+
+**Hook 配音文字**：[用於 ElevenLabs TTS 配音的那句 hook，30 字以內，念出來要順]
+**封面主標題**：[封面圖上的大字，10 字以內]
+**封面副標題**：[封面圖上的小字，人名/來源/補充，可選]
+**封面風格描述**：[給 image plugin 的 prompt — 描述封面畫面、色調、構圖]
+**剪輯段落**：[如果素材是影片，標注要剪的時間段]
+  - MM:SS-MM:SS — [段落描述]
+  - MM:SS-MM:SS — [段落描述]
+**CTA 文字**：[片尾引導語，可選]
+**目標平台**：小紅書 / 抖音 / YouTube Shorts
+```
+
+**範例**：
+
+```markdown
+---
+
+## Clip 執行摘要
+
+**Hook 配音文字**：OpenAI 剛發了一個東西，所有人都慌了
+**封面主標題**：GPT-5 來了
+**封面副標題**：Sam Altman 親自宣布
+**封面風格描述**：Dark cinematic background with blue tech lighting, a silhouette of a person standing before a massive glowing AI interface, bold white Chinese title text centered
+**剪輯段落**：
+  - 02:15-03:40 — Sam Altman 解釋 GPT-5 核心突破
+  - 05:10-05:45 — "This changes everything" 金句段落
+**CTA 文字**：關注我，每天帶你看 AI 最前線
+**目標平台**：抖音
+```
+
+**注意事項**：
+- Hook 配音文字必須口語化，念出來自然。不要書面語。
+- 封面風格描述用英文寫（image plugin prompt 效果更好）。
+- 剪輯段落只在素材是影片時才填，純文章素材留空。
+- 如果 clip skill 沒有找到這個摘要，會自己根據內容生成 hook 和封面。
