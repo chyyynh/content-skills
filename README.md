@@ -41,7 +41,8 @@ claude --plugin-dir ./content-skills
 | yt-dlp | 影片下載（clip） | `brew install yt-dlp` |
 | ffmpeg | 影片處理（clip） | `brew install ffmpeg` |
 | GROQ_API_KEY | Whisper 語音轉文字（clip，可選） | [console.groq.com](https://console.groq.com) |
-| OPENROUTER_API_KEY | 圖片生成（image） | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
+| ELEVENLABS_API_KEY | Hook 配音（clip，可選） | [elevenlabs.io](https://elevenlabs.io) |
+| OPENROUTER_API_KEY | 圖片生成（image / clip 封面） | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
 
 ## Skills
 
@@ -76,27 +77,58 @@ claude --plugin-dir ./content-skills
 確認素材 + 管道 → 讀取全文 → 選擇風格 → 大綱確認 → 產出草稿
 ```
 
-支援自訂品牌風格 — 建立 `references/custom-style.md` 後自動生效。
+支援自訂品牌風格 — 建立 `references/custom-style.md` 後自動生效。短影片腳本會自動產出 `clip-brief.md`，clip skill 可直接讀取執行。
 
 ---
 
-### `clip` — 影片剪輯 + 字幕
+### `clip` — 短影片一鍵產出
 
-> 本地剪輯影片，支援翻譯字幕、CapCut 風格逐詞高亮、自動精華偵測。
+> 丟一個 YouTube 連結，自動產出 9:16 短影片：AI 封面 + ElevenLabs 配音 Hook + 翻譯字幕 + CapCut 風格卡拉OK。
 
-**觸發**：`幫我剪這個影片` `加中文字幕` `clip the best parts`
+**觸發**：`幫我剪這個影片` `做成短影片` `加中文字幕` `clip the best parts`
 
 **支援來源**：YouTube、X/Twitter，以及 yt-dlp 支援的所有平台。
 
+#### Pipeline
+
 ```
-取得影片資訊 → 下載/轉錄字幕 → 翻譯 → 產生卡拉OK字幕 → 截圖檢查內嵌字幕 → 合成影片
+1. 取得影片資訊與語言
+2. 下載原文字幕（或 Whisper 轉錄）
+3. 裁切字幕到剪輯範圍
+4. 去重提取乾淨段落
+5. Claude 翻譯
+6. 產生 ASS 卡拉OK字幕（雙語 / 純翻譯）
+7. 截圖偵測內嵌字幕
+8. 合成影片（支援 9:16 豎屏）
+9. 短影片 Intro — Hook 腳本 + AI 封面 + ElevenLabs 配音 + CTA 片尾
 ```
 
-- **逐詞高亮** — CapCut 風格，灰→白逐詞亮起
+#### 字幕系統
+
+- **逐詞高亮** — CapCut 風格，灰→白逐詞亮起，CJK 按字、非 CJK 按詞
 - **雙語字幕** — 原文在上（帶高亮），翻譯在下
-- **自動精華** — 不指定時間時，自動推薦 3-5 個精華段落
+- **純翻譯模式** — 只顯示翻譯，大字居中
+- **自動去重** — YouTube 滾動字幕自動去除重疊，119 行 → 59 段
 - **內嵌字幕處理** — 自動截圖偵測，用 `drawbox` 黑條蓋住避免重疊
+
+#### 9:16 短影片格式
+
+- **模糊背景**（預設）— 原始 16:9 畫面居中，上下模糊填充，保留完整畫面
+- **中央裁切** — 適合講者正中央的 talking head 內容
+
+#### Hook + AI 封面 + 配音
+
+- **Hook 腳本** — 內建 8 種公式（懸念、顛覆、緊急、數據、錯誤、轉變、FOMO、直球），根據內容自動選擇
+- **AI 封面** — 透過 image plugin 生成 9:16 封面圖（需 `OPENROUTER_API_KEY`）
+- **ElevenLabs 配音** — Hook 文案自動 TTS 生成語音（需 `ELEVENLABS_API_KEY`）
+- **CTA 片尾** — 可選的結尾引導畫面，支援配音或純文字
+- **Concat** — intro + 主片段 + outro 自動拼接
+
+#### 其他
+
+- **自動精華** — 不指定時間時，自動推薦 3-5 個精華段落供挑選
 - **Whisper fallback** — 無字幕時透過 Groq API 語音轉文字
+- **Writer 銜接** — 支援讀取 writer 產出的 `clip-brief.md`，直接用腳本的 Hook 和封面描述
 
 ---
 
@@ -124,14 +156,17 @@ graph TD
     B --> D["選題池（核心領域）"]
     C --> E[writer<br/>日報草稿]
     D --> F[writer<br/>腳本 / 長文]
-    F --> G[clip<br/>剪片 + 字幕]
+    F -->|clip-brief.md| G[clip<br/>9:16 短影片]
+    G --> G1[ElevenLabs 配音]
+    G --> G2[image 封面]
     E --> H[image<br/>封面圖]
     F --> H
+    I["YouTube URL"] -->|獨立使用| G
 ```
 
 四個 skill 可以串接使用，也可以各自獨立：
 
 - **只要選題** — `今天有什麼值得做的題目`
 - **只要寫作** — `幫我把這篇文章改寫成 Twitter Thread`
-- **只要剪片** — `幫我剪這個 YouTube 影片 1:20-3:40 加中文字幕`
-- **只要生圖** — `幫我生成一張 16:9 的封面圖`
+- **只要剪片** — `幫我剪這個 YouTube 影片做成短影片`
+- **只要生圖** — `幫我生成一張 9:16 的封面圖`
