@@ -224,7 +224,7 @@ Generate a hook intro before the main clip. Structure: **cover image + hook voic
    | 數據報告/趨勢 | 數據（"只有 X% 的人知道"） |
    | 科普解釋 | 直球（"X 分鐘搞懂 _____"） |
 
-3. **Write hook**: Fill in the template, keep it **under 30 characters** and colloquial — it will be spoken aloud via TTS. Test by reading it out loud: if it sounds unnatural, rewrite.
+3. **Write hook**: Fill in the template as the opening line, then **expand to 2-4 sentences (30-80 characters, 3-8 seconds spoken)**. Add a detail, build suspense, or preview what's coming. It will be spoken aloud via TTS — read it out loud and rewrite if it sounds unnatural or too stiff.
 4. **Write cover text**: Main title (≤10 chars) + optional subtitle
 5. **Write CTA** (optional): One line for the outro, platform-appropriate
 6. **Present to user**: Show the hook, cover text, and CTA for approval before proceeding
