@@ -1,5 +1,7 @@
 # Step 9: Short Video Intro (Hook + AI Cover + Voiceover)
 
+> Key commands are also inline in SKILL.md. Refer here for the detailed hook writing workflow, cover image generation options, voice listing, CTA outro, and fallback paths.
+
 Structure: **cover image + hook voiceover (3-8s)** → **main clip with subtitles** → **CTA outro (optional)**.
 
 ## a. Script planning
