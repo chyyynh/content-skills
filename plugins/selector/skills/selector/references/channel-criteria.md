@@ -1,135 +1,134 @@
-# 管道篩選標準詳細指南
+# Channel Selection Criteria
 
-## 目錄
+## Contents
 
-1. [日報（微信公眾號）](#日報)
-2. [短影片（小紅書/抖音）](#短影片)
-3. [長文（公眾號/Twitter Thread）](#長文)
-4. [跨管道判斷流程](#跨管道判斷)
-
----
-
-## 日報 {#日報}
-
-### 定位
-
-每日資訊精選，讓讀者用 3 分鐘掌握最重要的事。
-
-### 選擇標準
-
-- **數量**：5 條為一期
-- **時效**：過去 24 小時內的內容優先
-- **多樣性**：至少覆蓋 3 個不同子領域（融資、產品、人事、政策、技術等）
-- **輕重搭配**：1-2 條重磅 + 3-4 條中等 + 1-2 條輕鬆/有趣的
-
-### 每條內容格式建議
-
-- 標題：< 20 字，直接說事
-- 摘要：2-3 句話，包含核心事實 + 一句點評或 so what
-- 不需要深度分析，重點是「快、準、全」
-
-### 不適合放日報的
-
-- 需要超過 200 字才能說清楚的複雜事件
-- 純觀點類（沒有新聞事件支撐的）
-- 已經在前幾天日報中報導過的（除非有重大更新）
+1. [Daily brief (WeChat)](#daily-brief)
+2. [Short video (Xiaohongshu / Douyin)](#short-video)
+3. [Long-form (WeChat / Twitter Thread)](#long-form)
+4. [Cross-channel coordination](#cross-channel)
 
 ---
 
-## 短影片 {#短影片}
+## Daily brief
 
-### 定位
+### Positioning
 
-小紅書/抖音上的 1-3 分鐘短影片，用視覺化方式呈現商業洞察。
+Daily curated news — readers catch up on the most important events in 3 minutes.
 
-### 選擇標準（按重要性排序）
+### Selection criteria
 
-**必須有其中至少一個**：
+- **Count**: 5 items per issue
+- **Timeliness**: Past 24 hours preferred
+- **Diversity**: Cover at least 3 different sub-domains (funding, product, people, policy, tech, etc.)
+- **Weight mix**: 1-2 heavy + 2-3 medium + 1 light/fun
 
-- 反直覺結論：「你以為 A，其實是 B」
-- 可視覺化的數據：有明確的數字對比、趨勢線
-- 情緒觸發點：震驚、啟發、焦慮、FOMO
-- 人物故事：有具體的人、具體的決策、具體的結果
+### Per-item format
 
-**加分項**：
+- Title: < 20 characters, state the fact directly
+- Summary: 2-3 sentences — core fact + one line of commentary or "so what"
+- No deep analysis needed; goal is "fast, accurate, comprehensive"
 
-- 可以用「3 個要點」「5 個步驟」等列表式結構
-- 有 before/after 對比
-- 能在前 3 秒用一句 hook 抓住注意力
+### Not suitable for daily brief
 
-### Hook 測試
-
-在推薦時，嘗試為每個候選題目寫一句 hook（影片開頭的第一句話）。如果寫不出有吸引力的 hook，這個題目可能不適合短影片。
-
-好的 hook 例子：
-
-- 「這家公司靠一個功能，3 個月拿了 100 萬用戶」
-- 「投資人最討厭聽到的一句話，你可能天天在說」
-- 「2024 最失敗的創業故事，燒了 2 億美金」
-
-### 不適合做短影片的
-
-- 純政策解讀（太乾）
-- 沒有明確結論的探討性話題
-- 需要大量背景知識才能理解的（門檻太高）
+- Complex events requiring 200+ words to explain
+- Pure opinion pieces without a news event
+- Already covered in recent daily briefs (unless major update)
 
 ---
 
-## 長文 {#長文}
+## Short video
 
-### 定位
+### Positioning
 
-深度分析文章，提供獨到觀點和系統性思考。發布在微信公眾號或 Twitter Thread。
+1-3 minute videos on Xiaohongshu/Douyin delivering business insights visually.
 
-### 選擇標準
+### Selection criteria (by priority)
 
-**最核心的判斷**：這個話題能不能提供 **讀者自己想不到的 insight**？
+**Must have at least one of**:
 
-**適合寫長文的話題特徵**：
+- Counter-intuitive conclusion: "You'd think A, but actually B"
+- Visualizable data: clear numerical comparisons, trend lines
+- Emotional trigger: shock, inspiration, anxiety, FOMO
+- Human story: specific person, specific decision, specific outcome
 
-- 表面現象背後有深層邏輯可以拆解
-- 可以連結多個看似無關的事件，找到共同模式
-- 有足夠的數據/案例支撐分析（不是純臆測）
-- 對讀者的決策有實際幫助（不只是「漲知識」）
+**Bonus**:
 
-**公眾號 vs Twitter Thread 的選擇**：
-| | 微信公眾號 | Twitter Thread |
+- Can be structured as "3 points" or "5 steps" list format
+- Has before/after comparison
+- Can be hooked in the first 3 seconds with one sentence
+
+### Hook test
+
+For each candidate, try writing a hook (the opening sentence of the video). If you can't write a compelling hook, the topic may not be suitable for short video.
+
+Good hook examples:
+
+- "This company got 1M users in 3 months with a single feature"
+- "The one sentence investors hate hearing — you probably say it every day"
+- "2024's biggest startup failure: $200M burned"
+
+### Not suitable for short video
+
+- Pure policy analysis (too dry)
+- Open-ended discussions without a clear conclusion
+- Topics requiring extensive background knowledge (too high a barrier)
+
+---
+
+## Long-form
+
+### Positioning
+
+Deep analysis articles providing unique perspectives and systematic thinking. Published on WeChat or as Twitter Threads.
+
+### Selection criteria
+
+**Core question**: Can this topic deliver an **insight the reader couldn't arrive at on their own**?
+
+**Good long-form topic traits**:
+
+- Surface phenomenon with deeper logic to unpack
+- Can connect seemingly unrelated events to reveal a common pattern
+- Sufficient data/cases to support analysis (not pure speculation)
+- Practically useful for the reader's decisions (not just "interesting to know")
+
+**WeChat vs Twitter Thread**:
+
+| | WeChat | Twitter Thread |
 |---|---|---|
-| 語言 | 中文 | 中英文皆可 |
-| 長度 | 2000-5000 字 | 10-25 則推文 |
-| 風格 | 完整敘事，起承轉合 | 碎片化但有邏輯線 |
-| 適合 | 系統性分析、深度拆解 | 快速觀點輸出、引發討論 |
-| 時效 | 可以花 1-2 天打磨 | 話題熱的時候就要發 |
+| Language | Chinese | Chinese or English |
+| Length | 2000-5000 characters | 10-25 tweets |
+| Style | Complete narrative arc | Fragmented but logical |
+| Suited for | Systematic analysis, deep breakdown | Quick takes, sparking discussion |
+| Timing | Can take 1-2 days to polish | Publish while topic is hot |
 
-### 不適合寫長文的
+### Not suitable for long-form
 
-- 時效性太強、明天就沒人關心的快訊
-- 資訊量不足以支撐 2000+ 字的話題
-- 已經被寫爛了、很難有新角度的老話題
+- Highly time-sensitive breaking news that no one will care about tomorrow
+- Topics without enough substance to sustain 2000+ characters
+- Overdone topics with no fresh angle available
 
 ---
 
-## 跨管道判斷 {#跨管道判斷}
+## Cross-channel coordination
 
-有些話題可以同時用在多個管道，但切入角度需要不同：
+Some topics work across multiple channels with different angles.
 
-### 判斷流程
+### Decision flow
 
 ```
-一個熱門話題進來
-├── 有即時性？ → 先放日報（快速覆蓋）
-├── 有視覺/情緒元素？ → 可以做短影片版本
-├── 有深度可挖？ → 規劃長文
-└── 以上都有？ → 三管道聯動
-    ├── Day 0: 日報先報
-    ├── Day 1: 短影片快速切入一個角度
-    └── Day 2-3: 長文深度分析
+A hot topic arrives
+├── Has immediacy? → Daily brief first (fast coverage)
+├── Has visual/emotional elements? → Short video version
+├── Has analytical depth? → Plan long-form
+└── All of the above? → Three-channel coordination
+    ├── Day 0: Daily brief reports it
+    ├── Day 1: Short video cuts one angle quickly
+    └── Day 2-3: Long-form deep analysis
 ```
 
-### 三管道聯動的好例子
+### Example: "Major company lays off 30%"
 
-假設話題是「某知名公司裁員 30%」：
-
-- **日報**：XX 公司宣布裁員 30%，涉及 YY 部門，CEO 發內部信表示...
-- **短影片**：「為什麼大公司裁員都先砍這個部門？3 個你不知道的裁員邏輯」
-- **長文**：從這次裁員看科技行業的組織變革趨勢，對比 3-5 家公司的策略差異
+- **Daily brief**: XX Company announces 30% layoffs affecting YY department, CEO's internal memo says...
+- **Short video**: "Why do big companies always cut this department first? 3 layoff logic you didn't know"
+- **Long-form**: What this layoff reveals about tech industry organizational transformation — comparing strategies across 3-5 companies

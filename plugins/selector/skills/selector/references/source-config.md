@@ -1,71 +1,141 @@
-# 資料來源：newsence
+# Sources
 
-內容資料庫透過 [newsence](https://www.npmjs.com/package/newsence) 存取。newsence 提供 CLI 和 MCP 兩種方式。
+## Contents
 
-## MCP 模式（推薦）
+- [User source config (GitHub Gist)](#user-source-config-github-gist)
+- [Unified material format](#unified-material-format)
+- [Fetch methods by type](#fetch-methods-by-type)
 
-如果 newsence 已註冊為 MCP server，直接使用 MCP tools：
+---
 
-| Tool | 用途 | 需登入 |
-|------|------|--------|
-| `search_articles` | 按關鍵字搜尋文章 | 否 |
-| `get_recent_articles` | 取得過去 N 小時的文章 | 否 |
-| `get_article` | 讀取單篇文章全文 | 否 |
-| `save_url` | 提交 URL 抓取 | 是 |
-| `list_collections` | 列出收藏夾 | 是 |
-| `add_to_collection` | 加入收藏 | 是 |
+## User source config (GitHub Gist)
 
-**Claude Code（本地）**：
-```bash
-claude mcp add newsence -- npx newsence mcp
-```
+Users maintain their source list via GitHub Gist, organized by type (RSS, Twitter, YouTube, Bilibili, Xiaohongshu, Website). Only sources marked `enabled=yes` are fetched.
 
-**Cowork / Claude Desktop（遠端）**：
-Settings > Connectors > Add custom connector，URL 填：
-```
-https://www.newsence.app/api/mcp
-```
+### Setup
 
-## CLI 模式（備用）
+1. Create a gist at [gist.github.com](https://gist.github.com) with filename `my-sources.md`
+2. Organize sources into sections by type, each with a table: `Name | Enabled | Tags | URL | Notes`
+3. Set env var: `export SELECTOR_SOURCES_GIST="<gist-id>"`
 
-如果 MCP 不可用，透過 bash 呼叫 CLI：
+### Fetching and caching
 
 ```bash
-# 搜尋文章
-newsence search "AI agent" --limit 20 --json
-
-# 最近 N 小時的文章
-newsence recent --hours 24 --limit 20 --json
-
-# 按來源過濾
-newsence search "創業" --source "36kr,TechCrunch" --json
-
-# 讀取全文
-newsence read <article-id> --json
+gh gist view "$SELECTOR_SOURCES_GIST" -f my-sources.md
 ```
 
-加 `--json` 可以拿到結構化資料，方便程式處理。
+- On success, cache to `/tmp/selector-sources-cache.md`
+- If gist unavailable, use cached version and warn user
+- If no cache, skip user sources and inform user how to set up
 
-## 文章資料結構
+---
 
-每篇文章包含以下欄位：
+## Unified material format
 
-| 欄位 | 說明 |
-|------|------|
-| id | 唯一識別碼 |
-| title | 英文標題 |
-| title_cn | 中文標題（如有） |
-| summary | 英文摘要 |
-| summary_cn | 中文摘要（如有） |
-| published_date | 發布時間 |
-| source | 來源名稱 |
-| url | 原始連結 |
+All sources normalize into this format:
 
-預設語言為 `zh-TW`，會自動使用中文標題和摘要。如需英文原文，加 `--lang en`。
+| Field | Required | Description |
+|-------|----------|-------------|
+| title | Yes | Headline or video title |
+| url | Yes | Original link |
+| source | Yes | Source name from the gist |
+| summary | No | One-line summary |
+| date | No | Published or fetched time |
+| type | No | `article` / `video` / `post` / `discussion` |
+| tags | No | Carried over from the gist tags column |
 
-## 選題流程中的使用方式
+---
 
-1. **獲取候選內容**：用 `get_recent_articles` 拉取過去 24-48 小時的文章
-2. **主題搜尋**：用 `search_articles` 針對特定關鍵字深挖
-3. **閱讀全文**：對候選文章用 `get_article` 讀取完整內容
-4. **收藏標記**：選定的文章用 `add_to_collection` 標記
+## Fetch methods by type
+
+For each source type, use the first available method. Prefer methods that don't require browser access.
+
+### RSS
+
+Most reliable source type. No authentication needed.
+
+```bash
+# Use WebFetch to read the feed URL directly
+WebFetch <feed-url> "Extract the N most recent items: title, url, date, summary"
+```
+
+- Works for all RSS/Atom feeds (blogs, news sites, forums like HN and Product Hunt)
+- Set N from the gist `Limit` column, or default to 10
+- type = `article`
+
+### Twitter
+
+Public profiles can be read without browser login.
+
+```bash
+# Option 1: WebFetch (public profiles only, may be rate-limited)
+WebFetch <profile-url> "Extract the 10 most recent tweets with text and date"
+
+# Option 2: opencli (needs browser bridge — use only if Option 1 fails)
+opencli twitter profile <handle> --limit 10 --format json
+```
+
+- type = `post`
+- For search across multiple accounts, batch by tags from the gist
+
+### YouTube
+
+Public channels. No authentication needed.
+
+```bash
+# Option 1: yt-dlp (most reliable)
+yt-dlp --flat-playlist --playlist-end 5 --print "%(title)s | %(url)s | %(upload_date)s" <channel-url>
+
+# Option 2: WebFetch
+WebFetch <channel-url> "Extract the 5 most recent video titles, URLs, and upload dates"
+```
+
+- type = `video`
+
+### Bilibili
+
+Public space pages. No authentication needed for basic info.
+
+```bash
+# Option 1: WebFetch
+WebFetch <space-url> "Extract the 5 most recent video titles, URLs, and upload dates"
+
+# Option 2: opencli (needs browser bridge)
+opencli bilibili user-videos <uid> --limit 5 --format json
+```
+
+- Extract uid from the space URL (e.g., `space.bilibili.com/11515399` → uid `11515399`)
+- type = `video`
+
+### Xiaohongshu
+
+Requires browser access for most content.
+
+```bash
+# opencli (needs browser bridge)
+opencli xiaohongshu search <query> --limit 10 --format json
+```
+
+- If browser bridge is unavailable, skip XHS sources and continue
+- type = `post`
+
+### Website
+
+Generic web pages. No authentication needed.
+
+```bash
+WebFetch <url> "Extract the most recent articles or posts: title, url, date, summary"
+```
+
+- type = `article`
+
+---
+
+## Fetch workflow
+
+1. Read the gist (or cache/defaults)
+2. Group enabled sources by type
+3. For each type, use the fetch method above
+4. Skip any source whose required tool is unavailable
+5. Normalize all results into the unified format
+6. Deduplicate by URL and title similarity, record cross-source hits

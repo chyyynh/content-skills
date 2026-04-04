@@ -1,136 +1,135 @@
 ---
 name: selector
 description: >
-  分析 newsence 來源的近期文章，推薦值得產出的內容主題，每個推薦附帶參考資料和建議角度。
-  涵蓋日報、短影片、長文等管道。
-  當用戶提到「推薦」「選題」「今天寫什麼」「有什麼新聞」「最近什麼話題火」「有什麼好題目」時觸發。
-  即使用戶只是說「今天發什麼」「有什麼新的」「看看最近有什麼」，只要跟內容產出相關都應觸發。
-  用戶問「XXX 要不要跟」「這個話題值不值得做」等判斷性問題也應觸發。
-  任何涉及內容規劃、選題方向、熱點追蹤、話題篩選的場景都應使用此 skill。
+  Analyzes recent content from user-configured sources to recommend topics worth producing.
+  Provides suggested angles and reference materials for daily briefs, short videos, and long-form articles.
+  Triggers when user mentions topic selection, recommendations, content planning, trend tracking,
+  or asks whether a topic is worth covering.
+argument-hint: "[time-range] [channel]"
 ---
 
 # Content Recommender
 
-分析近期文章，推薦值得做的內容主題，附上可直接用於寫作的參考資料。
+Analyzes recent materials from multiple sources, recommends topics worth producing, with reference materials ready for writing.
 
-## 前置條件
+**Output language**: Always respond in the user's language.
 
-依賴 newsence 取得文章資料。開始前確認可用性：
+## Prerequisites
 
-1. **MCP 模式（推薦）**：檢查是否有 newsence MCP tools（`get_recent_articles`、`search_articles` 等）。沒有的話引導用戶設定，參考 `references/source-config.md`。
-2. **CLI 模式（備用）**：確認 `newsence` CLI 可執行。
+Check in order:
 
-## 流程
+0. **Source config**: Check `$SELECTOR_SOURCES_GIST` env var. If set, run `gh gist view` to fetch the user's source table and cache to `/tmp/selector-sources-cache.md`. If not set, use all sources defined in `references/source-config.md` as defaults and suggest the user set up a gist for customization.
+1. **Tool availability**: For each enabled source in the table, verify the required tool is available (MCP tools, CLI, etc.). Skip unavailable sources without blocking.
 
-### 1. 確認需求
+## Workflow
 
-從對話上下文推斷，必要時快速確認：
-- 時間範圍（預設過去 24 小時）
-- 目標管道：日報 / 短影片 / 長文 / 全部（預設全部）
-- 想關注或避開的方向
+### 1. Confirm requirements
 
-意圖明確時（例如「今天日報寫什麼」），直接開始，不用反問。
+Infer from conversation context; only ask if ambiguous:
+- **Content profile**: What domains, audience, and directions is the user targeting? (e.g., "AI x Finance for retail investors"). This drives all filtering decisions downstream.
+- Time range (default: past 24 hours)
+- Target channel: daily brief / short video / long-form / all (default: all)
+- Directions to focus on or avoid
 
-### 2. 拉取文章
+When intent is clear (e.g., "what should the daily brief cover today") and the user's profile is already known from context, start immediately.
 
-用 newsence 拉取候選文章，操作方式見 `references/source-config.md`。
+### 2. Fetch materials
 
-- `get_recent_articles`：拉取指定時間範圍內的文章
-- `search_articles`：有特定方向時，帶關鍵字補充
-- `get_article`：需要看全文判斷話題深度時，讀取單篇
+Read the user's source table (gist / cache / defaults). Only fetch from sources marked `enabled=yes`, using each source's keywords and limit parameters. See `references/source-config.md` for per-source commands.
 
-### 3. 分析與歸類
+Skip unavailable sources without blocking. After fetching, merge and deduplicate: group by URL and title similarity, record "N sources covering this" as a topic density signal. Normalize all materials into the unified format before proceeding.
 
-拿到文章後做兩層分析：
+### 3. Analyze and categorize
 
-**讀取內容定位**：先讀 `references/content-profile.md`，了解核心領域、關注方向、不做的方向、和受眾畫像。這份檔案決定了篩選的優先級 — 符合核心領域的話題優先推薦，不做方向裡的話題直接跳過（除非是全網級別的大事件）。
+Two-pass analysis:
 
-**篩選**：從候選文章中挑出有潛力的，考慮：
-- 領域相關性 — 符合 `content-profile.md` 定義的核心領域和子方向的優先
-- 時效性 — 剛發生的優先，已經討論幾天的要有新角度才值得
-- 話題密度 — 多個來源都在報導的話題，說明市場關注度高
-- 延伸空間 — 有爭議、有故事線、能連結到更大趨勢的優先
+**Content profile**: Use the user's stated interests, domains, and directions from the conversation (or from Step 1 confirmation) to determine filtering priorities. If the user hasn't specified, ask what domains and audience they're targeting before filtering.
 
-**歸類**：根據 `references/channel-criteria.md` 的標準判斷每個話題適合的管道。同一個話題可以同時分配多個管道，但切入角度要不同。
+**Filter** candidates by:
+- **Domain relevance** — matches the user's stated interests and focus areas
+- **Timeliness** — recent events first; older topics need a fresh angle
+- **Topic density** — multiple sources reporting = high market attention (cross-type hits are stronger: news + community discussion > multiple articles from one source)
+- **Depth potential** — controversy, story arcs, or connection to larger trends
 
-### 4. 輸出推薦
+**Categorize**: Apply `references/channel-criteria.md` standards to determine suitable channels. One topic can map to multiple channels with different angles.
 
-分兩個 section + 詳細 brief 按需展開。
+### 4. Output recommendations
 
-#### Section 1：日報
+Two sections + expandable detailed briefs.
 
-綜合新聞精選，**不限於核心領域**，目標是讓讀者快速掌握今天最重要的事。按 `channel-criteria.md` 的日報標準選 5 條。
+#### Section 1: Daily brief
 
-```
-## 日報
-
-| # | 主題 | 一句話價值 | 時效 | 素材數 |
-|---|------|-----------|------|--------|
-| 1 | ... | ... | 今天 | 2 篇 |
-| 2 | ... | ... | 今天 | 1 篇 |
-```
-
-#### Section 2：選題池
-
-**只放符合 `content-profile.md` 核心領域的話題**。每個主題標註建議管道（短影片 / 長文 / 兩者皆可）。
+Curated news highlights, **not limited to core domains**. Goal: let readers catch up on the day's most important events in 3 minutes. Pick 5 items per `channel-criteria.md` daily brief standards.
 
 ```
-## 選題池
+## Daily Brief
 
-| # | 主題 | 價值 / Hook | 管道 | 時效 | 素材數 |
-|---|------|------------|------|------|--------|
-| 6 | ... | ... | 短影片 | 3 天內 | 2 篇 |
-| 7 | ... | ... | 長文 | 一週內 | 3 篇 |
-| 8 | ... | ... | 短影片+長文 | 2-3 天 | 2 篇 |
+| # | Topic | One-liner | Freshness | Materials |
+|---|-------|-----------|-----------|-----------|
+| 1 | ...   | ...       | Today     | 2 articles |
+| 2 | ...   | ...       | Today     | 3 (across 2 sources) |
 ```
 
-注意：
-- 編號跨兩個 section 全局連續，方便用戶直接說「1 和 7」選題
-- 選題池的「價值 / Hook」欄：短影片寫 hook，長文寫核心 insight，兩者皆可的寫最吸引人的那個
-- 兩個 section 之後各用一句話標出最優先的主題及理由
-- 如果某個話題同時適合日報和選題池，可以重複出現，但角度要不同
+#### Section 2: Topic pool
 
-#### 第二層：詳細 brief
-
-用戶選定主題後（例如「1 和 5 開始寫」），再展開選中主題的完整 brief：
+**Only topics matching the user's stated domains.** Tag each with recommended channel (short video / long-form / both).
 
 ```
-### #1 [主題方向]
+## Topic Pool
 
-**建議角度**：
-- 角度 A：...
-- 角度 B：...
-
-**參考資料**：
-- [文章標題](url)（id: xxx）— 核心素材，提供了 [什麼]
-- [文章標題](url)（id: xxx）— 補充視角，可用於 [什麼]
+| # | Topic | Value / Hook | Channel | Freshness | Materials |
+|---|-------|-------------|---------|-----------|-----------|
+| 6 | ...   | ...         | Short video | 3 days | 2 articles |
+| 7 | ...   | ...         | Long-form   | 1 week | 3 (across 2 sources) |
+| 8 | ...   | ...         | Both        | 2-3 days | 2 articles |
 ```
 
-參考資料是這個 skill 最重要的輸出 — 每個推薦都要列出可用於寫作的來源文章，並說明每篇在這個主題中的角色：主要素材、對立觀點、數據來源、背景補充等。這些資料在第二層展開時提供，確保用戶進入寫作時不需要再自己找資料。
+Notes:
+- Numbering is globally sequential across both sections for easy reference ("1 and 7")
+- Value/Hook column: write a hook for short videos, core insight for long-form
+- After each section, one sentence highlighting the top-priority topic with reasoning
+- A topic may appear in both sections if angles differ
 
-如果用戶直接說「開始寫」而沒有選題，則展開最優先的主題。
+#### Detailed brief (on demand)
 
-### 5. 銜接寫作
+When the user selects topics (e.g., "let's write 1 and 5"), expand the full brief:
 
-用戶選定主題後，引導到 writer skill，帶上：
-- 選定的 newsence article id（參考資料）
-- 建議的管道和角度
-- 用戶補充的方向
+```
+### #1 [Topic direction]
+
+**Suggested angles**:
+- Angle A: ...
+- Angle B: ...
+
+**Reference materials**:
+- [Article title](url) (id: xxx) — core material, provides [what]
+- [Article title](url) (id: xxx) — supplementary perspective, useful for [what]
+```
+
+Reference materials are the most important output — every recommendation must include source articles for writing, annotated with their role: primary source, opposing view, data source, background context. These are provided in the expanded brief so the user enters writing with all materials ready.
+
+If the user says "start writing" without selecting, expand the top-priority topic.
+
+### 5. Hand off to writer
+
+After topic selection, guide to the writer skill with:
+- Reference materials (with id or url)
+- Recommended channel and angle
+- Any additional direction from the user
 
 ---
 
-## 追熱點
+## Hot topic evaluation
 
-用戶問「XXX 要不要跟」時：
+When the user asks "should we cover XXX":
 
-1. 用 `search_articles` 搜相關文章
-2. 分析：多少來源在報導、討論集中在什麼面向、是上升期還是已退燒
-3. 給出明確的跟/不跟建議 — 如果值得跟，附上適合的管道、角度、和參考文章
+1. Search across enabled sources for related materials
+2. Analyze: how many sources reporting, what aspects are discussed, trending up or cooling down
+3. Give a clear cover/skip recommendation — if worth covering, include suitable channel, angle, and reference materials
 
 ---
 
-## 參考文件
+## Reference files
 
-- `references/content-profile.md` — 內容定位：核心領域、關注方向、受眾畫像（使用者可自行編輯）
-- `references/channel-criteria.md` — 各管道的篩選標準和跨管道聯動策略
-- `references/source-config.md` — newsence 的設定和使用方式
+- `references/channel-criteria.md` — Channel-specific selection criteria and cross-channel coordination
+- `references/source-config.md` — Source configuration (Gist setup, template) + per-source command reference
