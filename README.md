@@ -37,7 +37,7 @@ claude --plugin-dir ./content-skills
 
 | 依賴 | 用途 | 安裝 |
 |------|------|------|
-| [newsence](https://www.npmjs.com/package/newsence) | 文章資料來源（selector / writer） | `claude mcp add newsence -- npx newsence mcp` |
+| [opencli](https://github.com/jackwener/opencli) | 多來源抓取（selector，可選） | `npm install -g @jackwener/opencli` |
 | yt-dlp | 影片下載（clip） | `brew install yt-dlp` |
 | ffmpeg | 影片處理（clip） | `brew install ffmpeg` |
 | GROQ_API_KEY | Whisper 語音轉文字（clip，可選） | [console.groq.com](https://console.groq.com) |
@@ -48,15 +48,15 @@ claude --plugin-dir ./content-skills
 
 ### `selector` — 選題推薦
 
-> 分析近期文章，推薦值得產出的內容主題，附建議角度和參考資料。
+> 從用戶配置的多種來源（RSS、Twitter、YouTube、Bilibili 等）分析近期素材，推薦值得產出的內容主題。
 
 **觸發**：`今天寫什麼` `有什麼新聞` `最近什麼話題火` `XXX 要不要跟`
 
 ```
-確認需求 → newsence 拉取文章 → 篩選歸類 → 輸出推薦 brief
+確認需求 → 從 GitHub Gist 讀取來源表 → 多來源抓取 → 篩選歸類 → 輸出推薦 brief
 ```
 
-每個推薦包含：為什麼值得做、建議角度、可直接用於寫作的參考文章（標註角色：核心素材、對立觀點、數據來源等）。也支援追熱點判斷 — 分析報導密度和趨勢階段，給出跟/不跟建議。
+來源列表透過 [GitHub Gist](https://gist.github.com) 維護，支援 RSS、Twitter、YouTube、Bilibili、小紅書、Website 等類型。每個推薦包含：為什麼值得做、建議角度、可直接用於寫作的參考素材。也支援追熱點判斷 — 分析報導密度和趨勢階段，給出跟/不跟建議。
 
 ---
 

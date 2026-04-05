@@ -48,7 +48,7 @@ All sources normalize into this format:
 
 ## Fetch methods by type
 
-For each source type, use the first available method. Prefer methods that don't require browser access.
+For each source type, use the first available method. If none work, skip the source.
 
 ### RSS
 
@@ -65,14 +65,15 @@ WebFetch <feed-url> "Extract the N most recent items: title, url, date, summary"
 
 ### Twitter
 
-Public profiles can be read without browser login.
-
 ```bash
-# Option 1: WebFetch (public profiles only, may be rate-limited)
+# Option 1: WebFetch (public profiles)
 WebFetch <profile-url> "Extract the 10 most recent tweets with text and date"
 
-# Option 2: opencli (needs browser bridge — use only if Option 1 fails)
+# Option 2: opencli
 opencli twitter profile <handle> --limit 10 --format json
+
+# Option 3: WebSearch
+WebSearch "<handle> site:x.com recent"
 ```
 
 - type = `post`
@@ -94,13 +95,11 @@ WebFetch <channel-url> "Extract the 5 most recent video titles, URLs, and upload
 
 ### Bilibili
 
-Public space pages. No authentication needed for basic info.
-
 ```bash
 # Option 1: WebFetch
 WebFetch <space-url> "Extract the 5 most recent video titles, URLs, and upload dates"
 
-# Option 2: opencli (needs browser bridge)
+# Option 2: opencli
 opencli bilibili user-videos <uid> --limit 5 --format json
 ```
 
@@ -109,14 +108,13 @@ opencli bilibili user-videos <uid> --limit 5 --format json
 
 ### Xiaohongshu
 
-Requires browser access for most content.
-
 ```bash
-# opencli (needs browser bridge)
+# opencli (requires browser bridge)
 opencli xiaohongshu search <query> --limit 10 --format json
 ```
 
-- If browser bridge is unavailable, skip XHS sources and continue
+- XHS blocks unauthenticated access; opencli with browser bridge is the only method
+- If unavailable, skip
 - type = `post`
 
 ### Website

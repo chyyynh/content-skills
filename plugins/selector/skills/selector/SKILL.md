@@ -37,7 +37,7 @@ When intent is clear (e.g., "what should the daily brief cover today") and the u
 
 Read the user's source table (gist / cache / defaults). Only fetch from sources marked `enabled=yes`, using each source's keywords and limit parameters. See `references/source-config.md` for per-source commands.
 
-Skip unavailable sources without blocking. After fetching, merge and deduplicate: group by URL and title similarity, record "N sources covering this" as a topic density signal. Normalize all materials into the unified format before proceeding.
+After fetching, merge and deduplicate: group by URL and title similarity, record "N sources covering this" as a topic density signal. Normalize all materials into the unified format before proceeding.
 
 ### 3. Analyze and categorize
 
@@ -59,30 +59,41 @@ Two sections + expandable detailed briefs.
 
 #### Section 1: Daily brief
 
-Curated news highlights, **not limited to core domains**. Goal: let readers catch up on the day's most important events in 3 minutes. Pick 5 items per `channel-criteria.md` daily brief standards.
+Curated highlights, **not limited to core domains**. Goal: let readers catch up on the day's most important events in 3 minutes. Pick 5 items per `channel-criteria.md` daily brief standards.
 
 ```
 ## Daily Brief
 
 | # | Topic | One-liner | Freshness | Materials |
 |---|-------|-----------|-----------|-----------|
-| 1 | ...   | ...       | Today     | 2 articles |
-| 2 | ...   | ...       | Today     | 3 (across 2 sources) |
+| 1 | ...   | ...       | Today     | 2 articles (TechCrunch, HN) |
+| 2 | ...   | ...       | Today     | 1 article + 3 tweets |
 ```
+
+Materials column should show source types and names, e.g., `1 article + 2 tweets + 1 repo` — this reveals cross-type density at a glance.
 
 #### Section 2: Topic pool
 
-**Only topics matching the user's stated domains.** Tag each with recommended channel (short video / long-form / both).
+**Only topics matching the user's stated domains.** Tag each with recommended channel and content type.
 
 ```
 ## Topic Pool
 
-| # | Topic | Value / Hook | Channel | Freshness | Materials |
-|---|-------|-------------|---------|-----------|-----------|
-| 6 | ...   | ...         | Short video | 3 days | 2 articles |
-| 7 | ...   | ...         | Long-form   | 1 week | 3 (across 2 sources) |
-| 8 | ...   | ...         | Both        | 2-3 days | 2 articles |
+| # | Topic | Value / Hook | Channel | Type | Freshness | Materials |
+|---|-------|-------------|---------|------|-----------|-----------|
+| 6 | ...   | ...         | Short video | Tool review | Today | 1 repo (1.8k⭐/day) + 2 tweets |
+| 7 | ...   | ...         | Long-form   | Opinion piece | 3 days | 1 tweet thread (9.9M views) |
+| 8 | ...   | ...         | Both        | Podcast recap | 2 days | 1 podcast + 3 tweets |
+| 9 | ...   | ...         | Long-form   | News analysis | 2 days | 2 articles + 1 video |
 ```
+
+**Type** indicates the content angle, which guides the writer skill on structure:
+- `News analysis` — breaking news or event coverage
+- `Tool review` — trending repo, new product, or tool comparison
+- `Opinion piece` — thought leader take, contrarian view, trend commentary
+- `Podcast recap` — key insights from a podcast/interview
+- `Trend report` — pattern across multiple signals (e.g., "3 agent harnesses trending at once")
+- `Tutorial` — how-to inspired by a new tool or technique
 
 Notes:
 - Numbering is globally sequential across both sections for easy reference ("1 and 7")
@@ -96,24 +107,28 @@ When the user selects topics (e.g., "let's write 1 and 5"), expand the full brie
 
 ```
 ### #1 [Topic direction]
+**Type**: Tool review
 
 **Suggested angles**:
 - Angle A: ...
 - Angle B: ...
 
 **Reference materials**:
-- [Article title](url) (id: xxx) — core material, provides [what]
-- [Article title](url) (id: xxx) — supplementary perspective, useful for [what]
+- [Title](url) — core material, provides [what]
+- [Title](url) — supplementary perspective, useful for [what]
+- @handle tweet (url) — key quote or data point
+- repo: owner/name (url) — ⭐ count, description
 ```
 
-Reference materials are the most important output — every recommendation must include source articles for writing, annotated with their role: primary source, opposing view, data source, background context. These are provided in the expanded brief so the user enters writing with all materials ready.
+Reference materials are the most important output — every recommendation must include source materials for writing, annotated with their role: primary source, opposing view, data source, background context. Materials can be articles, tweets, repos, videos, or podcast episodes. These are provided in the expanded brief so the user enters writing with all materials ready.
 
 If the user says "start writing" without selecting, expand the top-priority topic.
 
 ### 5. Hand off to writer
 
 After topic selection, guide to the writer skill with:
-- Reference materials (with id or url)
+- Content type (news analysis, tool review, podcast recap, etc.)
+- Reference materials (articles, tweets, repos, videos — with urls)
 - Recommended channel and angle
 - Any additional direction from the user
 
