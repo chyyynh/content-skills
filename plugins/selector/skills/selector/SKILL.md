@@ -18,8 +18,12 @@ Analyzes recent materials from multiple sources, recommends topics worth produci
 
 Check in order:
 
-0. **Source config**: Check `$SELECTOR_SOURCES_GIST` env var. If set, run `gh gist view` to fetch the user's source table and cache to `/tmp/selector-sources-cache.md`. If not set, use all sources defined in `references/source-config.md` as defaults and suggest the user set up a gist for customization.
-1. **Tool availability**: For each enabled source in the table, verify the required tool is available (MCP tools, CLI, etc.). Skip unavailable sources without blocking.
+0. **Source config**: Check `$SELECTOR_SOURCES_GIST` env var. If set, run `gh gist view "$SELECTOR_SOURCES_GIST" -f my-sources.md` to fetch the user's source table and cache to `/tmp/selector-sources-cache.md`. If not set, suggest the user set up a gist (see `references/source-config.md` for format).
+1. **Tool availability**: Verify each tool:
+   - `newsence`: check newsence MCP tools are available
+   - `opencli`: run `opencli doctor` to verify Browser Bridge connectivity
+   - `yt-dlp`: check `command -v yt-dlp`
+   - Skip sources whose tool is unavailable without blocking.
 
 ## Workflow
 
@@ -35,9 +39,44 @@ When intent is clear (e.g., "what should the daily brief cover today") and the u
 
 ### 2. Fetch materials
 
-Read the user's source table (gist / cache / defaults). Only fetch from sources marked `enabled=yes`, using each source's keywords and limit parameters. See `references/source-config.md` for per-source commands.
+Read the user's source table (gist / cache). Execute **all steps below** — newsence does not cover Bilibili, Xiaohongshu, or Website, so Steps 3–4 must always run. See `references/source-config.md` for detailed per-source commands.
 
-After fetching, merge and deduplicate: group by URL and title similarity, record "N sources covering this" as a topic density signal. Normalize all materials into the unified format before proceeding.
+**Batch A** (run in parallel):
+
+1. **newsence** — bulk fetch indexed RSS, Twitter, YouTube:
+   ```
+   mcp__newsence__get_recent_articles  hours=24
+   ```
+
+2. **Twitter** — timeline for accounts not indexed by newsence:
+   ```
+   opencli twitter timeline --type following --limit 50 --format json
+   ```
+
+**Batch B** (run in parallel, after Batch A):
+
+3. **Bilibili** — keyword search, 2–3 queries derived from gist tags and user's content profile:
+   ```
+   opencli bilibili search "<keyword>" --limit 10 --format json
+   ```
+
+4. **Xiaohongshu** — keyword search, 2–3 queries derived from gist tags and user's content profile:
+   ```
+   opencli xiaohongshu search "<keyword>" --limit 10 --format json
+   ```
+   Requires Chrome login — skip only if browser bridge unavailable.
+
+5. **YouTube** — channels not returned by newsence in Step 1:
+   ```
+   yt-dlp --flat-playlist --playlist-end 5 --print "%(title)s | %(url)s | %(upload_date)s" <channel-url>/videos
+   ```
+
+6. **Website** — sources in the Website section of the gist:
+   ```
+   WebFetch <url> "Extract recent articles: title, url, date, summary"
+   ```
+
+**Merge and deduplicate**: group by URL and title similarity. Cross-type hits (e.g., English article + Chinese community post) are stronger density signals.
 
 ### 3. Analyze and categorize
 
