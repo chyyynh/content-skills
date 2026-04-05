@@ -96,11 +96,14 @@ WebFetch <channel-url> "Extract the 5 most recent video titles, URLs, and upload
 ### Bilibili
 
 ```bash
-# Option 1: WebFetch
-WebFetch <space-url> "Extract the 5 most recent video titles, URLs, and upload dates"
-
-# Option 2: opencli
+# Option 1: opencli user-videos (preferred — fetches from specific accounts)
 opencli bilibili user-videos <uid> --limit 5 --format json
+
+# Option 2: opencli search (keyword discovery)
+opencli bilibili search "<keyword>" --limit 10 --format json
+
+# Option 3: WebFetch (fallback)
+WebFetch <space-url> "Extract the 5 most recent video titles, URLs, and upload dates"
 ```
 
 - Extract uid from the space URL (e.g., `space.bilibili.com/11515399` → uid `11515399`)
@@ -109,11 +112,15 @@ opencli bilibili user-videos <uid> --limit 5 --format json
 ### Xiaohongshu
 
 ```bash
-# opencli (requires browser bridge)
-opencli xiaohongshu search <query> --limit 10 --format json
+# Option 1: opencli user (preferred — fetches from specific accounts)
+opencli xiaohongshu user <user-id> --limit 5 --format json
+
+# Option 2: opencli search (keyword discovery, or fallback when user-id unavailable)
+opencli xiaohongshu search "<creator-name-or-keyword>" --limit 5 --format json
 ```
 
 - XHS blocks unauthenticated access; opencli with browser bridge is the only method
+- If gist URL is a note URL (`/search_result/<note-id>`) instead of a user profile URL, fall back to searching by creator name
 - If unavailable, skip
 - type = `post`
 

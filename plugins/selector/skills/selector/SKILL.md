@@ -55,16 +55,33 @@ Read the user's source table (gist / cache). Execute **all steps below** — new
 
 **Batch B** (run in parallel, after Batch A):
 
-3. **Bilibili** — keyword search, 2–3 queries derived from gist tags and user's content profile:
+3. **Bilibili** — account fetch + keyword discovery:
+
+   a. **Account fetch** (run in parallel): extract UID from each gist Bilibili space URL (`space.bilibili.com/<uid>`), fetch recent videos:
+   ```
+   opencli bilibili user-videos <uid> --limit 5 --format json
+   ```
+
+   b. **Keyword discovery**: 1–2 searches derived from gist tags and content profile for content outside tracked accounts:
    ```
    opencli bilibili search "<keyword>" --limit 10 --format json
    ```
 
-4. **Xiaohongshu** — keyword search, 2–3 queries derived from gist tags and user's content profile:
+4. **Xiaohongshu** — account fetch + keyword discovery. Requires Chrome login — skip only if browser bridge unavailable.
+
+   a. **Account fetch** (run in parallel): for each gist XHS creator, fetch recent notes:
+   ```
+   opencli xiaohongshu user <user-id> --limit 5 --format json
+   ```
+   If gist URL is a user profile (`/user/profile/<id>`), extract the id directly. If it is a note URL (`/search_result/<note-id>`), search by creator name instead:
+   ```
+   opencli xiaohongshu search "<creator-name>" --limit 5 --format json
+   ```
+
+   b. **Keyword discovery**: 1–2 searches derived from gist tags and content profile:
    ```
    opencli xiaohongshu search "<keyword>" --limit 10 --format json
    ```
-   Requires Chrome login — skip only if browser bridge unavailable.
 
 5. **YouTube** — channels not returned by newsence in Step 1:
    ```
