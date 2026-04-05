@@ -51,7 +51,7 @@ Each plugin follows the same structure:
 
 ## Versioning
 
-Each plugin has its own version in `.claude-plugin/plugin.json`. Bump the version whenever changing SKILL.md or references. Use semver: patch for wording/format changes, minor for new features or structural changes.
+Each plugin has its own version in `.claude-plugin/plugin.json`. Bump the version whenever changing SKILL.md or references. Always bump the patch version (e.g., 1.1.1 → 1.1.2).
 
 ## Testing locally
 
