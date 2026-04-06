@@ -93,6 +93,12 @@ Read the user's source table (gist / cache). Execute **all steps below** — new
    WebFetch <url> "Extract recent articles: title, url, date, summary"
    ```
 
+7. **GitHub** — trending repos from the past 24 hours:
+   ```
+   gh api search/repositories -X GET -f q='stars:>50 created:>YYYY-MM-DD' -f sort=stars -f order=desc -f per_page=20 --jq '.items[] | "\(.full_name) | ⭐\(.stargazers_count) | \(.description) | \(.html_url)"'
+   ```
+   Replace `YYYY-MM-DD` with yesterday's date. If the gist GitHub section specifies language filters, add `language:<lang>` to the query.
+
 **Merge and deduplicate**: group by URL and title similarity. Cross-type hits (e.g., English article + Chinese community post) are stronger density signals.
 
 ### 3. Analyze and categorize

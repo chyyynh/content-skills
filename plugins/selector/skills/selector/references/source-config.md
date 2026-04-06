@@ -134,6 +134,26 @@ WebFetch <url> "Extract the most recent articles or posts: title, url, date, sum
 
 - type = `article`
 
+### GitHub
+
+Trending repos — recently created with rapid star growth.
+
+```bash
+# Option 1: gh API search (preferred — structured, filterable)
+gh api search/repositories -X GET \
+  -f q='stars:>50 created:>YYYY-MM-DD' \
+  -f sort=stars -f order=desc -f per_page=20 \
+  --jq '.items[] | "\(.full_name) | ⭐\(.stargazers_count) | \(.description) | \(.html_url)"'
+
+# Option 2: WebFetch (trending page, less structured)
+WebFetch "https://github.com/trending?since=daily" "Extract trending repos: name, description, stars, language, stars gained today"
+```
+
+- Replace `YYYY-MM-DD` with yesterday's date
+- If gist specifies language filters (e.g., `python`, `typescript`), add `language:<lang>` to the `q` parameter
+- Repos with no description or suspicious names (e.g., `star-*`) are likely star-farming bots — skip them
+- type = `repo`
+
 ---
 
 ## Fetch workflow
