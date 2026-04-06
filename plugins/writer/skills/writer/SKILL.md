@@ -20,7 +20,7 @@ argument-hint: "[article-id 或 url] [格式]"
 
 搞清楚三件事：
 - **素材**：用戶指定的文章（可能帶 newsence article id），或剛從 selector 選出來的
-- **格式**：日報 / 短影片腳本 / 長文（公眾號或 Twitter Thread）
+- **格式**：日報 / 短影片腳本 / 長文（公眾號或 Twitter Thread）/ Repo 介紹
 - **平台**：微信公眾號 / 小紅書 / 抖音 / Twitter/X
 
 如果從 selector 銜接過來，這些資訊應該都已經有了，直接開始。
@@ -39,6 +39,7 @@ argument-hint: "[article-id 或 url] [格式]"
 | 短影片 | 輕鬆幽默 × 中度 × 對話體 | 要親近感，太嚴肅會被滑走 |
 | 長文（公眾號） | 溫和專業 × 深度 × 第一人稱 | 讀者願意花時間，要有溫度 |
 | 長文（Twitter） | 犀利洞察 × 中度 × 第一人稱 | 快節奏，每則都要有料 |
+| Repo 介紹 | 輕鬆幽默 × 中度 × 第一人稱 | 社群推薦感，要有個人觀點 |
 
 用戶可以覆蓋預設。風格維度的完整定義和範例在 `references/style-guide.md`。如果 `references/custom-style.md` 存在，優先用裡面的品牌風格。
 
@@ -46,6 +47,7 @@ argument-hint: "[article-id 或 url] [格式]"
 - 日報 → `references/format-daily.md`
 - 短影片 → `references/format-short-video.md`
 - 長文 → `references/format-long-article.md`
+- Repo 介紹 → `references/format-repo-intro.md`
 
 格式指南裡有完整的結構模板、範例、和常見陷阱，照著寫。
 
@@ -74,4 +76,5 @@ argument-hint: "[article-id 或 url] [格式]"
 - `references/format-daily.md` — 日報模板
 - `references/format-short-video.md` — 短影片腳本模板
 - `references/format-long-article.md` — 長文/Thread 模板
+- `references/format-repo-intro.md` — GitHub Repo 介紹模板
 - `references/custom-style.md` — 自訂品牌風格（可選，建立後自動生效）
